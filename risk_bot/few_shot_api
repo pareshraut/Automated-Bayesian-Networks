@@ -1,0 +1,47 @@
+from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain.prompts.prompt import PromptTemplate
+
+from langchain.chat_models import ChatOpenAI
+
+from langchain.prompts import (
+    FewShotChatMessagePromptTemplate,
+    ChatPromptTemplate,
+)
+
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.chains import ConversationChain
+
+
+examples = [
+    {"input": "Inflation", "output": "FRED"},
+    {"input": "Exchange Rates", "output": "FRED"},
+    {"input": "GDP", "output": "FRED"},
+    {"input": "Apple Stock Price", "output": "YFinance"},
+    {"input": "Trading Volume", "output": "YFinance"},
+    {"input": "Price to Earnings Ratio", "output": "YFinance"},
+    {"input": "Geopolitical Events", "output": "AlphaVantage"},
+    {"input": "Governmanet Policies", "output": "AlphaVantage"},
+    {"input": "Macroeconomic Policies", "output": "AlphaVantage"},
+    {"input": "Investment in safe assets", "output": "User"},
+    {"input": "Stop Loss Order", "output": "User"}
+]
+
+
+# This is a prompt template used to format each individual example.
+example_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("human", "{input}"),
+        ("ai", "{output}"),
+    ]
+)
+few_shot_prompt = FewShotChatMessagePromptTemplate(
+    example_prompt=example_prompt,
+    examples=examples,
+)
+
+llm = ChatOpenAI(temperature=0, openai_api_key='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', model='gpt-4')
+memory = ConversationBufferWindowMemory(k=10, return_messages=True)
+chain = ConversationChain(memory=memory, prompt=few_shot_prompt, llm=llm, verbose=False)
+response = chain.predict(input=f"Brent Crude Oil Price")
+
+print(response)
