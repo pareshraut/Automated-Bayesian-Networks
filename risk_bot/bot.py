@@ -1,7 +1,7 @@
 import streamlit as st
 import re
 from setup import Nodes, Edges, ProbabilityDistribution
-from util import extract_and_format_nodes, extract_and_format_edges
+from util import extract_and_format_nodes, extract_and_format_edges, get_empty_cpd
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -31,12 +31,13 @@ class RiskBot:
             "Event Node, Opportunity Node (one node each), Trigger Nodes, "
             "Mitigator Nodes, Control Nodes, External Influence Nodes, and Outcome Nodes (multiple nodes allowed for these categories). "
             "Present each category and its corresponding nodes in JSON format, separated by lines. "
-            'For instance - {"Event Node": ["Stock Market Crash"], "Opportunity Node": ["Investment Opportunity in Tech Stocks"], '
-            '"Trigger Nodes": ["Economic Recession", "High Unemployment Rate"], '
-            '"Mitigator Nodes": ["Government Intervention", "Monetary Policy"], '
-            '"Control Nodes": ["Investment in Safe Assets", "Diversification Strategy"], '
-            '"External Influence Nodes": ["Global Political Instability"], '
-            '"Outcome Nodes": ["Investment Loss", "Investment Gain"]}. '
+            'For instance - {"Event Node": ["Risk of Apple stock going down by more than 5% in a week"], '
+            '"Opportunity Node": ["Percentage Change in Competitive Stock Price"], '
+            '"Trigger Nodes": ["Percentage Change in S&P 500 Index", "Percentage Change in Nasdaq 100 Index"], '
+            '"Mitigator Nodes": ["Apple\'s Dividend Yield", "Apple\'s Buyback Announcements"], '
+            '"Control Nodes": ["Percentage of Portfolio in Cash", "Percentage of Portfolio in Bond Investments"], '
+            '"External Influence Nodes": ["Federal Interest Rate", "US GDP Growth Rate"], '
+            '"Outcome Nodes": ["Percentage Change in Portfolio Value", "Return on Investment (ROI)"}. '
             "ATTENTION:  After presenting the suggested nodes, ask the user : 'Do you have any feedback or modification for the nodes provided'"
             "If the user provides feedback or requests changes to the nodes, incorporate their input and adjust the nodes accordingly."
             "Ask the user if they are satisfied with the proposed nodes and if they wish to finalize the nodes for the Bayesian Network"
@@ -45,8 +46,6 @@ class RiskBot:
             Final nodes : enter the nodes that he finalized and is satisfied with here in the format of the example given
             """
         )
-
-        # edges_template =("Now that the nodes are finalized, you are to assist the user in finalizing the edges for the Bayesian network. ")
 
         edges_template = (
             "In the role of a supportive AI, your objective is to assist the user in finalizing a list of edges for a specified risk scenario within a Bayesian network framework. "
@@ -67,20 +66,80 @@ class RiskBot:
             """ATTENTION: ONCE THE USER REPLIES that he is fine with the edges , I want you to give output in the below format:
             Final edges : enter the edges that he finalized and is satisfied with here in the format of the example given
             """
-        )
-        probability_template = ("Now that the nodes and edges are finalized, you are to assist the user in finalizing the probability distribution for the Bayesian network.")
+        ) 
 
-        #self.memory = ConversationBufferWindowMemory(k=5, return_messages=True)
+        # )
+        # probability_template = (
+        #     "Your overarching task is to methodically elicit and document the probability distributions for each node in the Bayesian Network, ensuring clarity and precision at each step. Here's a step-by-step breakdown:"
+            
+        #     " 1. **Node Identification**:"
+        #     "    - Begin by methodically examining the network to identify the true independent nodes, which are nodes that do not have any incoming edges."
+            
+        #     " 2. **Category Suggestions and Confirmation**:"
+        #     "    - For every node, whether independent or dependent, propose appropriate categorizations based on its context and semantic nature."
+        #     "    - Interact with the user in a structured manner. For instance: 'For the node {Node Name}, we're considering the categories {Suggested Categories}. Do these resonate with your expectations, or would you prefer modifications?'"
+        #     "    - Be open to feedback. Adjust and reconfirm categories based on the user's input until mutual agreement is achieved for each node."
+            
+        #     " 3. **Probability Elicitation for Independent Nodes**:"
+        #     "    - Once all categories for the independent nodes are mutually agreed upon, initiate the probability elicitation phase."
+        #     "    - Instead of overwhelming the user with multiple requests, methodically ask for a single probability value corresponding to each category of an independent node. For instance: 'Considering the node {Node Name}, what's your estimated probability for the category {Category Name}?'"
+        #     "    - Take note of the user's response before proceeding to the next category or node."
+            
+        #     " 4. **Probability Elicitation for Dependent Nodes**:"
+        #     "    - With the independent nodes' probabilities documented, shift your focus to the dependent nodes."
+        #     "    - Given the categories of their parent nodes, solicit the conditional probabilities in a systematic manner, iterating through each combination of parent node categories."
+        #     "    - Prompt the user with structured queries, like: 'Given that {Parent Node 1} is {Category A} and {Parent Node 2} is {Category B}, what's your estimated probability for {Dependent Node} being {Category X}?'"
+            
+        #     " 5. **Documentation and Recap**:"
+        #     "    - As you accumulate these probabilities, ensure they're being systematically documented."
+        #     "    - Once all probabilities are captured, present a structured overview to the user for final verification. Ask: 'Here's the compiled probability distribution based on our discussion. Do these values align with your expectations, or are there any final adjustments you'd like to make?'"
+
+        #     "Remember, throughout this process, clarity, patience, and user feedback are paramount. The objective is not just to obtain probabilities but to ensure that the user is confident and clear about every value they provide."
+        # )
+        
+
         self.memory = memory
         self.nodes_handler = Nodes(self.memory, self.get_prompt(nodes_template), self.chat)
         self.edges_handler = Edges(self.memory, self.get_prompt(edges_template), self.chat)
-        self.probability_handler = ProbabilityDistribution(self.memory, self.get_prompt(probability_template), self.chat)
+        #self.probability_handler = ProbabilityDistribution(self.memory, self.get_prompt(probability_template), self.chat)
+        self.probability_handler = None
         self.nodes_pattern = r"(?i)final nodes\s*:\s*(.*(?:\n|.)*)"
         self.edges_pattern = r"(?i)final edges\s*:\s*(.*(?:\n|.)*)"
         self.probability_pattern = r"(?i)final probability distribution\s*:\s*(.*(?:\n|.)*)"
         self.NODES = 'nodes'
         self.EDGES = 'edges'
         self.PROBABILITY = 'probability'
+
+    def get_probability_template(self):
+        return """
+Empty CPD: {0}
+
+### Initial Instructions:
+- Your goal is to assist in filling in the Conditional Probability Distribution (CPD) table provided by the user. You will suggest probabilities for each entry and adjust them based on the user's feedback.
+  
+- If the user indicates that the conversation is too technical, you should simplify your explanations.
+
+### Visual Representation:
+- To aid visualization, you might occasionally sketch out relationships between nodes, especially if it helps clarify the dependencies.
+  
+- For instance, if A and B are influencing C, you could visualize it as:
+  A (Category) -> C (Category) <- B (Category)
+
+### Data Collection:
+1. Starting with the CPD table for an independent node, such as [Node Name]:
+   - "Looking at [Node Name], potential categories could be '[Category 1]', '[Category 2]'. Based on your understanding, the probability for [Category 1] might be [X%]. Does this align with the user's thinking or would they suggest a different value?"
+
+2. For dependent nodes, where the probability of a node depends on the state of its parents:
+   - "Now, considering [Dependent Node Name] which is influenced by [Parent Node(s) Name]. Given [Parent Node Category], the probability of [Dependent Node Name] being in [Category] might be [Y%]. How does the user feel about this value?"
+
+3. You will proceed this way, filling out each entry of the CPD table one by one, proposing a value and adjusting it based on the user's feedback.
+
+### Continuous Feedback:
+- You should always be receptive to guidance from the user. If the user feels there's a more appropriate probability or if your suggestion doesn't seem right, you will adjust accordingly.
+
+### Completion:
+- After you've filled out the entire CPD table, you will provide a summary of the inputs and express gratitude for the user's collaboration.
+""".format(get_empty_cpd(st.session_state['edges']))
 
 
     def get_prompt(self, template):
@@ -111,13 +170,14 @@ class RiskBot:
             if st.session_state.category == self.NODES:
                 st.session_state.category = self.EDGES
                 st.session_state['pattern'] = self.edges_pattern
-                response = self.edges_handler.get_response('Give me the edges now.')
                 st.session_state['nodes'] = match.group(1)
+                response = self.edges_handler.get_response('Give me the edges now.')
             elif st.session_state.category == self.EDGES:
                 st.session_state.category = self.PROBABILITY
                 st.session_state['pattern'] = self.probability_pattern
-                response = self.probability_handler.get_response('Give me the probability distribution now.')
                 st.session_state['edges'] = match.group(1)
+                self.probability_handler = ProbabilityDistribution(self.memory, self.get_prompt(self.get_probability_template()), self.chat)
+                response = self.probability_handler.get_response('Give me the probability distribution now.')
             else:
                 st.session_state['probability'] = match.group(1)
         st.cache(allow_output_mutation=True)
@@ -137,7 +197,7 @@ if 'responses' not in st.session_state:
 if 'requests' not in st.session_state:
     st.session_state['requests'] = []
 if 'buffer_memory' not in st.session_state:
-    st.session_state.buffer_memory = ConversationBufferWindowMemory(k=10, return_messages=True)
+    st.session_state.buffer_memory = ConversationBufferWindowMemory(k=20, return_messages=True)
 if 'category' not in st.session_state:
     st.session_state.category = 'nodes'
 if 'pattern' not in st.session_state:
