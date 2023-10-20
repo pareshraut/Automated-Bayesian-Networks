@@ -1,7 +1,7 @@
 import streamlit as st
 import re
 from setup import Nodes, Edges, ProbabilityDistribution
-from util import extract_and_format_nodes, extract_and_format_edges, get_empty_cpd
+from util import extract_and_format_nodes, extract_and_format_edges, get_empty_cpd, get_edges_and_cpds
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -171,7 +171,7 @@ Empty CPD: {0}
                 st.session_state.category = self.EDGES
                 st.session_state['pattern'] = self.edges_pattern
                 st.session_state['nodes'] = match.group(1)
-                response = self.edges_handler.get_response('Give me the edges now.')
+                response = self.edges_handler.get_response('I have edges denoting common causal relationships between nodes. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_edges']))
             elif st.session_state.category == self.EDGES:
                 st.session_state.category = self.PROBABILITY
                 st.session_state['pattern'] = self.probability_pattern
@@ -197,11 +197,15 @@ if 'responses' not in st.session_state:
 if 'requests' not in st.session_state:
     st.session_state['requests'] = []
 if 'buffer_memory' not in st.session_state:
-    st.session_state.buffer_memory = ConversationBufferWindowMemory(k=20, return_messages=True)
+    st.session_state['buffer_memory'] = ConversationBufferWindowMemory(k=20, return_messages=True)
 if 'category' not in st.session_state:
-    st.session_state.category = 'nodes'
+    st.session_state['category'] = 'nodes'
 if 'pattern' not in st.session_state:
-    st.session_state.pattern = r"(?i)final nodes\s*:\s*(.*(?:\n|.)*)"
+    st.session_state['pattern'] = r"(?i)final nodes\s*:\s*(.*(?:\n|.)*)"
+if 'tentative_edges' not in st.session_state:
+    st.session_state['tentative_edges'] = None
+if 'tentative_cpds' not in st.session_state:
+    st.session_state['tentative_cpds'] = None
 
 risk_bot = RiskBot(openai_api_key, st.session_state.buffer_memory)
 
@@ -221,6 +225,8 @@ with text_container:
     # Update session_state according to risk_bot's internal state
     if st.session_state['nodes']:
         extract_and_format_nodes(st.session_state['nodes'])
+        if not (st.session_state['tentative_edges'] and st.session_state['tentative_cpds']):
+            st.session_state['tentative_edges'],st.session_state['tentative_cpds'] = get_edges_and_cpds(st.session_state['nodes'])
     if st.session_state['edges']:
         extract_and_format_edges(st.session_state['edges'])
     if st.session_state['probability']:pass
@@ -233,3 +239,6 @@ with response_container:
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
 
 
+# st.write(st.session_state['tentative_edges'])
+# st.write(st.session_state['tentative_cpds'])
+st.write(st.session_state)

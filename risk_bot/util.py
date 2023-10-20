@@ -10,7 +10,6 @@ import datetime
 import os
 import pandas as pd
 from multiprocessing import Pool
-import ast
 from pgmpy.estimators import MaximumLikelihoodEstimator
 from pgmpy.models import BayesianNetwork
 from pgmpy.estimators import MmhcEstimator
@@ -120,6 +119,7 @@ def get_empty_cpd(edges):
 
 
 def get_api(nodes):
+    print('Inside get_api')
     examples = [
     {
         "input": '["Inflation", "Stop Loss Order", "Apple Stock Price"]',
@@ -187,6 +187,7 @@ def get_api(nodes):
     return chain.invoke({"input": nodes}).content
 
 def get_data(api, ticker):
+    print('Inside get_data')
     #current date in string yyyy-mm-dd
     current_date = datetime.datetime.now().strftime("%Y-%m-%d")
     if api == 'FRED':
@@ -200,6 +201,7 @@ def get_data(api, ticker):
         return None
 
 def flatten_dict_values(d):
+    print('Inside flatten_dict_values')
     def flatten(item):
         if isinstance(item, dict):
             for value in item.values():
@@ -213,6 +215,7 @@ def flatten_dict_values(d):
     return list(flatten(d))
 
 def process_node(item):
+    print('Inside process_node')
     node_name, value = item
     if isinstance(value, tuple) and len(value) == 2:
         api, ticker = value
@@ -227,13 +230,15 @@ def process_node(item):
         return pd.DataFrame(columns=[node_name])
 
 def get_data_from_nodes(nodes):
-    nodes = flatten_dict_values(nodes)
+    print('Inside get_data_from_nodes')
+    #nodes = flatten_dict_values(nodes)
     api_ticker = ast.literal_eval(get_api(nodes))
     
     with Pool() as pool:
         dfs = pool.map(process_node, api_ticker.items())
     
     df = pd.concat(dfs, axis=1)
+    print('Before dropping na: ', df.head())
     df = df.dropna(axis=1, how='all')
     df = df.dropna(axis=0)
     for column in df.columns:
@@ -242,12 +247,15 @@ def get_data_from_nodes(nodes):
     return df
 
 def get_edges_and_cpds(nodes):
-    nodes = ast.literal_eval(nodes)
+    print('Inside get_edges_and_cpds')
+    start_idx = nodes.find('{')
+    end_idx = nodes.rfind('}') + 1
+    json_data = nodes[start_idx:end_idx]
+    nodes = ast.literal_eval(json_data)
     df = get_data_from_nodes(nodes)
     est = MmhcEstimator(df)
     model = est.estimate()
     edges = model.edges()
-    st.session_state['tentative_edges'] = edges  # Save edges to session state
     bn = BayesianNetwork(edges)
     bn.fit(df, estimator=MaximumLikelihoodEstimator)
     cpd_strings = ''
@@ -255,7 +263,8 @@ def get_edges_and_cpds(nodes):
         cpd = bn.get_cpds(node)
         cpd_strings += cpd_to_string(cpd)
         cpd_strings += 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    st.session_state['tentative_cpd'] = cpd_strings
+    return edges, cpd_strings
+
 
 
 
