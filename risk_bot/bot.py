@@ -171,7 +171,6 @@ Empty CPD: {0}
                 st.session_state.category = self.EDGES
                 st.session_state['pattern'] = self.edges_pattern
                 st.session_state['nodes'] = match.group(1)
-                response = self.edges_handler.get_response('I have edges denoting common causal relationships between nodes. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_edges']))
             elif st.session_state.category == self.EDGES:
                 st.session_state.category = self.PROBABILITY
                 st.session_state['pattern'] = self.probability_pattern
@@ -220,13 +219,17 @@ with text_container:
         with st.spinner("Thinking..."):
             response = risk_bot.manage_risk(query)
             st.session_state['requests'].append(query)
-            st.session_state['responses'].append(response)
+            if not re.search(risk_bot.nodes_pattern, response):
+                st.session_state['responses'].append(response)
 
     # Update session_state according to risk_bot's internal state
     if st.session_state['nodes']:
         extract_and_format_nodes(st.session_state['nodes'])
         if not (st.session_state['tentative_edges'] and st.session_state['tentative_cpds']):
             st.session_state['tentative_edges'],st.session_state['tentative_cpds'] = get_edges_and_cpds(st.session_state['nodes'])
+            query = 'I have edges denoting common causal relationships between nodes. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_edges'])
+            response = risk_bot.edges_handler.get_response(query)
+            st.session_state['responses'].append(response)
     if st.session_state['edges']:
         extract_and_format_edges(st.session_state['edges'])
     if st.session_state['probability']:pass
@@ -238,5 +241,3 @@ with response_container:
             if i < len(st.session_state['requests']):
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
 
-
-st.write(st.session_state)

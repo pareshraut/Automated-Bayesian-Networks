@@ -19,6 +19,7 @@ import yfinance as yf
 
 from pgmpy.models import BayesianNetwork
 from pgmpy.factors.discrete import TabularCPD
+from joblib import Parallel, delayed
 
 
 # Set the FRED API key
@@ -188,8 +189,6 @@ def get_api(nodes):
     return chain.invoke({"input": nodes}).content
 
 def get_data(api, ticker):
-    print('Inside get_data')
-    #current date in string yyyy-mm-dd
     current_date = datetime.datetime.now().strftime("%Y-%m-%d")
     if api == 'FRED':
         fred = Fred()
@@ -202,7 +201,6 @@ def get_data(api, ticker):
         return None
 
 def flatten_dict_values(d):
-    print('Inside flatten_dict_values')
     def flatten(item):
         if isinstance(item, dict):
             for value in item.values():
@@ -216,7 +214,6 @@ def flatten_dict_values(d):
     return list(flatten(d))
 
 def process_node(item):
-    print('Inside process_node')
     node_name, value = item
     if isinstance(value, tuple) and len(value) == 2:
         api, ticker = value
@@ -236,25 +233,32 @@ def get_data_from_nodes(nodes):
     print('api_ticker: ', api_ticker)
     
     dfs = []
-    
-    for key, value in api_ticker.items():
-        df = process_node((key, value))
-        dfs.append(df)
+
+    with Parallel(n_jobs=-1) as parallel:
+        dfs = parallel(delayed(process_node)(item) for item in api_ticker.items())
     
     df = pd.concat(dfs, axis=1)
+    
+    # Step 1: Drop columns with all NaN values.
     df = df.dropna(axis=1, how='all')
-    df = df.dropna(axis=0)
-    print(df.columns)
+    
+    # Step 2: Forward fill NaN values in each column.
     for column in df.columns:
-        duplicate_cols = []
+        df[column] = df[column].fillna(method='ffill')
+    
+    # Step 3: Drop rows with any NaN values.
+    df = df.dropna(axis=0)
+    
+    # Step 4: Continue with your current logic.
+    for column in df.columns:
+        print(column)
         unique_vals = df[column].unique()
-        if len(unique_vals) <  3:
+        if len(unique_vals) < 3:
             df = df.drop(columns=[column])
         elif len(unique_vals) < 4:
-            df[column] = pd.qcut(df[column], q=3, labels = ['Low', 'High'] ,duplicates='drop')
+            df[column] = pd.qcut(df[column], q=3, labels=['Low', 'High'], duplicates='drop')
         else:
-            df[column] = pd.qcut(df[column], q=3, labels = ['Low', 'Medium', 'High'] ,duplicates='drop')
-    
+            df[column] = pd.qcut(df[column], q=3, labels=['Low', 'Medium', 'High'], duplicates='drop')
     return df
 
 def get_edges_and_cpds(nodes):
@@ -267,6 +271,7 @@ def get_edges_and_cpds(nodes):
     est = MmhcEstimator(df)
     model = est.estimate()
     edges = model.edges()
+    print(edges)
     bn = BayesianNetwork(edges)
     bn.fit(df, estimator=MaximumLikelihoodEstimator)
     cpd_strings = ''
