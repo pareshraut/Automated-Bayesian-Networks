@@ -239,6 +239,4 @@ with response_container:
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
 
 
-# st.write(st.session_state['tentative_edges'])
-# st.write(st.session_state['tentative_cpds'])
 st.write(st.session_state)

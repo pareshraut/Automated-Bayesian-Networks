@@ -177,7 +177,8 @@ def get_api(nodes):
             1. FRED: Use FRED for macro and microeconomic indicators.
             2. YFinance: Choose YFinance for stock and commodity prices.
 
-            Please provide a list of nodes, and I will match each node with the most appropriate API, resulting in a dictionary mapping nodes to APIs and thier tickers or keywords."""),
+            Please provide a list of nodes, and I will match each node with the most appropriate API, resulting in a dictionary mapping nodes to APIs and thier tickers or keywords.
+            REMEMBER TO FOLLOW THE FORMAT OF THE EXAMPLES !"""),
             few_shot_prompt,
             ("human", "{input}"),
         ]
@@ -231,18 +232,28 @@ def process_node(item):
 
 def get_data_from_nodes(nodes):
     print('Inside get_data_from_nodes')
-    #nodes = flatten_dict_values(nodes)
     api_ticker = ast.literal_eval(get_api(nodes))
+    print('api_ticker: ', api_ticker)
     
-    with Pool() as pool:
-        dfs = pool.map(process_node, api_ticker.items())
+    dfs = []
+    
+    for key, value in api_ticker.items():
+        df = process_node((key, value))
+        dfs.append(df)
     
     df = pd.concat(dfs, axis=1)
-    print('Before dropping na: ', df.head())
     df = df.dropna(axis=1, how='all')
     df = df.dropna(axis=0)
+    print(df.columns)
     for column in df.columns:
-        df[column] = pd.qcut(df[column], q=3, labels=['Low', 'Medium', 'High'])
+        duplicate_cols = []
+        unique_vals = df[column].unique()
+        if len(unique_vals) <  3:
+            df = df.drop(columns=[column])
+        elif len(unique_vals) < 4:
+            df[column] = pd.qcut(df[column], q=3, labels = ['Low', 'High'] ,duplicates='drop')
+        else:
+            df[column] = pd.qcut(df[column], q=3, labels = ['Low', 'Medium', 'High'] ,duplicates='drop')
     
     return df
 
@@ -259,7 +270,7 @@ def get_edges_and_cpds(nodes):
     bn = BayesianNetwork(edges)
     bn.fit(df, estimator=MaximumLikelihoodEstimator)
     cpd_strings = ''
-    for node in flatten_dict_values(nodes):
+    for node in df.columns:
         cpd = bn.get_cpds(node)
         cpd_strings += cpd_to_string(cpd)
         cpd_strings += 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
