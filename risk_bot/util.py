@@ -250,15 +250,22 @@ def get_data_from_nodes(nodes):
     df = df.dropna(axis=0)
     
     # Step 4: Continue with your current logic.
+    label_map = {2: ['Low', 'High'],
+                 3: ['Low', 'Medium', 'High']}
+
     for column in df.columns:
         print(column)
         unique_vals = df[column].unique()
-        if len(unique_vals) < 3:
+        num_unique = len(unique_vals)
+        
+        if num_unique < 3:
             df = df.drop(columns=[column])
-        elif len(unique_vals) < 4:
-            df[column] = pd.qcut(df[column], q=3, labels=['Low', 'High'], duplicates='drop')
         else:
-            df[column] = pd.qcut(df[column], q=3, labels=['Low', 'Medium', 'High'], duplicates='drop')
+            # We use min(3, num_unique-1) to ensure that we don't go beyond the number of labels we have defined
+            bins = min(3, num_unique - 1)
+            labels = label_map[bins]
+            df[column] = pd.qcut(df[column], q=bins, labels=labels, duplicates='drop')
+
     return df
 
 # def get_edges_and_cpds(nodes):
