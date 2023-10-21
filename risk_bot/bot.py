@@ -1,7 +1,7 @@
 import streamlit as st
 import re
 from setup import Nodes, Edges, ProbabilityDistribution
-from util import extract_and_format_nodes, extract_and_format_edges, get_empty_cpd, get_edges_and_cpds
+from util import extract_and_format_nodes, extract_and_format_edges, get_empty_cpd, get_edges, get_cpds
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -225,13 +225,18 @@ with text_container:
     # Update session_state according to risk_bot's internal state
     if st.session_state['nodes']:
         extract_and_format_nodes(st.session_state['nodes'])
-        if not (st.session_state['tentative_edges'] and st.session_state['tentative_cpds']):
-            st.session_state['tentative_edges'],st.session_state['tentative_cpds'] = get_edges_and_cpds(st.session_state['nodes'])
+        if not st.session_state['tentative_edges']:
+            st.session_state['tentative_edges'] = get_edges(st.session_state['nodes'])
             query = 'I have edges denoting common causal relationships between nodes. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_edges'])
             response = risk_bot.edges_handler.get_response(query)
             st.session_state['responses'].append(response)
     if st.session_state['edges']:
         extract_and_format_edges(st.session_state['edges'])
+        if not st.session_state['tentative_cpds']:
+            st.session_state['tentative_cpds'] = get_cpds(st.session_state['edges'])
+            query = 'I have a CPD table denoting the probability distribution of each node given the state of its parents. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_cpds'])
+            response = risk_bot.probability_handler.get_response(query)
+            st.session_state['responses'].append(response)
     if st.session_state['probability']:pass
 
 with response_container:

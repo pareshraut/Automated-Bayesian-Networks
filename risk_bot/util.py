@@ -261,8 +261,29 @@ def get_data_from_nodes(nodes):
             df[column] = pd.qcut(df[column], q=3, labels=['Low', 'Medium', 'High'], duplicates='drop')
     return df
 
-def get_edges_and_cpds(nodes):
-    print('Inside get_edges_and_cpds')
+# def get_edges_and_cpds(nodes):
+#     print('Inside get_edges_and_cpds')
+#     start_idx = nodes.find('{')
+#     end_idx = nodes.rfind('}') + 1
+#     json_data = nodes[start_idx:end_idx]
+#     nodes = ast.literal_eval(json_data)
+#     df = get_data_from_nodes(nodes)
+#     est = MmhcEstimator(df)
+#     model = est.estimate()
+#     edges = model.edges()
+#     print(edges)
+#     bn = BayesianNetwork(edges)
+#     bn.fit(df, estimator=MaximumLikelihoodEstimator)
+#     cpd_strings = ''
+#     for node in df.columns:
+#         cpd = bn.get_cpds(node)
+#         cpd_strings += cpd_to_string(cpd)
+#         cpd_strings += 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+#     return edges, cpd_strings
+
+def get_edges(nodes):
+    """Compute the edges given the nodes."""
+    print('Inside get_edges')
     start_idx = nodes.find('{')
     end_idx = nodes.rfind('}') + 1
     json_data = nodes[start_idx:end_idx]
@@ -272,6 +293,16 @@ def get_edges_and_cpds(nodes):
     model = est.estimate()
     edges = model.edges()
     print(edges)
+    return edges
+
+def get_cpds(edges, nodes):
+    """Compute the CPDs given the edges and nodes."""
+    print('Inside get_cpds')
+    start_idx = nodes.find('{')
+    end_idx = nodes.rfind('}') + 1
+    json_data = nodes[start_idx:end_idx]
+    nodes = ast.literal_eval(json_data)
+    df = get_data_from_nodes(ast.literal_eval(edges))
     bn = BayesianNetwork(edges)
     bn.fit(df, estimator=MaximumLikelihoodEstimator)
     cpd_strings = ''
@@ -279,7 +310,7 @@ def get_edges_and_cpds(nodes):
         cpd = bn.get_cpds(node)
         cpd_strings += cpd_to_string(cpd)
         cpd_strings += 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    return edges, cpd_strings
+    return cpd_strings
 
 
 
