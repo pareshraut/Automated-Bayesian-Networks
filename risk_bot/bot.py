@@ -246,3 +246,4 @@ with response_container:
             if i < len(st.session_state['requests']):
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
 
+# st.write(st.session_state)

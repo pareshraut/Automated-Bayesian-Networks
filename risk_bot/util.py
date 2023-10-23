@@ -174,12 +174,10 @@ def get_api(nodes):
             ("system", """You are an AI tasked with selecting the most suitable API for each of the following nodes' requirements. 
             If you believe that none of these APIs will provide the required data, please reply with 'User'.
             Here are the available APIs and their purposes:
-
             1. FRED: Use FRED for macro and microeconomic indicators.
             2. YFinance: Choose YFinance for stock and commodity prices.
-
             Please provide a list of nodes, and I will match each node with the most appropriate API, resulting in a dictionary mapping nodes to APIs and thier tickers or keywords.
-            REMEMBER TO FOLLOW THE FORMAT OF THE EXAMPLES !"""),
+            REMEMBER TO FOLLOW THE "output" FORMAT OF THE EXAMPLES BELOW!"""),
             few_shot_prompt,
             ("human", "{input}"),
         ]
@@ -245,9 +243,7 @@ def get_data_from_nodes(nodes):
     # Step 2: Forward fill NaN values in each column.
     for column in df.columns:
         df[column] = df[column].fillna(method='ffill')
-    
-    # Step 3: Drop rows with any NaN values.
-    df = df.dropna(axis=0)
+    print(df.head())
     
     # Step 4: Continue with your current logic.
     label_map = {2: ['Low', 'High'],
@@ -299,6 +295,7 @@ def get_edges(nodes):
     est = MmhcEstimator(df)
     model = est.estimate()
     edges = model.edges()
+    print(df.head())
     print(edges)
     return edges
 
