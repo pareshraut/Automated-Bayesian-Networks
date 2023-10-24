@@ -65,10 +65,6 @@ def extract_and_format_edges(response):
     edge_data = response[start_idx:end_idx]
     edges = re.findall(r'\("([^"]*)", "([^"]*)"\)', edge_data)
 
-
-    for edge in edges:
-        formatted_data.append(f"{edge[0]} -> {edge[1]}")
-
     with st.sidebar.expander("Current Edges"):
         for item in formatted_data:
             st.write(item)
@@ -244,8 +240,6 @@ def get_data_from_nodes(nodes):
     # Step 2: Forward fill NaN values in each column.
     for column in df.columns:
         df[column] = df[column].fillna(method='ffill').fillna(method='bfill')
-
-    print('df: ', df.isna().sum())
     
     # Step 3: Drop rows with any NaN values.
     #df = df.dropna(axis=0)
@@ -255,7 +249,6 @@ def get_data_from_nodes(nodes):
                  3: ['Low', 'Medium', 'High']}
 
     for column in df.columns:
-        print(column, df[column].nunique())
         num_unique = df[column].nunique()
         
         if num_unique < 3:
@@ -297,22 +290,20 @@ def get_edges(nodes):
     json_data = nodes[start_idx:end_idx]
     nodes = ast.literal_eval(json_data)
     df = get_data_from_nodes(nodes)
-    print('df: ', df.head())
     est = MmhcEstimator(df)
     model = est.estimate()
     edges = model.edges()
     print(edges)
     return edges
 
-def get_cpds(edges, nodes):
+def get_cpds(edges):
     """Compute the CPDs given the edges and nodes."""
     print('Inside get_cpds')
-    start_idx = nodes.find('{')
-    end_idx = nodes.rfind('}') + 1
-    json_data = nodes[start_idx:end_idx]
-    nodes = ast.literal_eval(json_data)
-    df = get_data_from_nodes(ast.literal_eval(edges))
-    bn = BayesianNetwork(edges)
+    print('edges: ', edges)
+    edges = ast.literal_eval(edges)
+    df = get_data_from_nodes(edges)
+    valid_edges = [edge for edge in edges if edge[0] in df.columns and edge[1] in df.columns]
+    bn = BayesianNetwork(valid_edges)
     bn.fit(df, estimator=MaximumLikelihoodEstimator)
     cpd_strings = ''
     for node in df.columns:
