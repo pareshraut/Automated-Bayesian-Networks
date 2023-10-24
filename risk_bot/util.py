@@ -243,7 +243,8 @@ def get_data_from_nodes(nodes):
     
     # Step 2: Forward fill NaN values in each column.
     for column in df.columns:
-        df[column] = df[column].fillna(method='ffill')
+        df[column] = df[column].fillna(method='ffill').fillna(method='bfill')
+
     print('df: ', df.isna().sum())
     
     # Step 3: Drop rows with any NaN values.
