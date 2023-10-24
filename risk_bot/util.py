@@ -170,20 +170,19 @@ def get_api(nodes):
 
 
     final_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", """You are an AI tasked with selecting the most suitable API for each of the following nodes' requirements. 
-            If you believe that none of these APIs will provide the required data, please reply with 'User'.
-            Here are the available APIs and their purposes:
+    [
+        ("system", "You are an AI tasked with selecting the most suitable API for each of the following nodes' requirements. "
+                   "If you believe that none of these APIs will provide the required data, please reply with 'User'. "
+                   "Here are the available APIs and their purposes: "
+                   "1. FRED: Use FRED for macro and microeconomic indicators. "
+                   "2. YFinance: Choose YFinance for stock and commodity prices. "
+                   "Please provide a list of nodes, and I will match each node with the most appropriate API, resulting in a dictionary mapping nodes to APIs and thier tickers or keywords. "
+                   "Please return the data as a dictionary, where the key is the node and the value is a tuple of the API and the ticker or keyword."),
+        few_shot_prompt,
+        ("human", "{input}")
+    ]
+)
 
-            1. FRED: Use FRED for macro and microeconomic indicators.
-            2. YFinance: Choose YFinance for stock and commodity prices.
-
-            Please provide a list of nodes, and I will match each node with the most appropriate API, resulting in a dictionary mapping nodes to APIs and thier tickers or keywords.
-            REMEMBER TO FOLLOW THE FORMAT OF THE EXAMPLES !"""),
-            few_shot_prompt,
-            ("human", "{input}"),
-        ]
-    )
 
     chain = final_prompt | ChatOpenAI(temperature=0,openai_api_key='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',model_name='gpt-4')
     return chain.invoke({"input": nodes}).content
@@ -229,7 +228,7 @@ def process_node(item):
 
 def get_data_from_nodes(nodes):
     print('Inside get_data_from_nodes')
-    api_ticker = ast.literal_eval(get_api(nodes))
+    api_ticker = ast.literal_eval(get_api(flatten_dict_values(nodes)))
     print('api_ticker: ', api_ticker)
     
     dfs = []
@@ -245,20 +244,21 @@ def get_data_from_nodes(nodes):
     # Step 2: Forward fill NaN values in each column.
     for column in df.columns:
         df[column] = df[column].fillna(method='ffill')
+    print('df: ', df.isna().sum())
     
     # Step 3: Drop rows with any NaN values.
-    df = df.dropna(axis=0)
+    #df = df.dropna(axis=0)
     
     # Step 4: Continue with your current logic.
     label_map = {2: ['Low', 'High'],
                  3: ['Low', 'Medium', 'High']}
 
     for column in df.columns:
-        print(column)
-        unique_vals = df[column].unique()
-        num_unique = len(unique_vals)
+        print(column, df[column].nunique())
+        num_unique = df[column].nunique()
         
         if num_unique < 3:
+
             df = df.drop(columns=[column])
         else:
             # We use min(3, num_unique-1) to ensure that we don't go beyond the number of labels we have defined
@@ -296,6 +296,7 @@ def get_edges(nodes):
     json_data = nodes[start_idx:end_idx]
     nodes = ast.literal_eval(json_data)
     df = get_data_from_nodes(nodes)
+    print('df: ', df.head())
     est = MmhcEstimator(df)
     model = est.estimate()
     edges = model.edges()
