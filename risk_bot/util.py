@@ -307,10 +307,13 @@ def get_cpds(edges):
     edges = ast.literal_eval(edges)
     df = get_data_from_nodes(edges)
     valid_edges = [edge for edge in edges if edge[0] in df.columns and edge[1] in df.columns]
+    # Extract all nodes from valid_edges
+    valid_nodes = list(set([node for edge in valid_edges for node in edge]))
+
     bn = BayesianNetwork(valid_edges)
     bn.fit(df, estimator=MaximumLikelihoodEstimator)
     cpd_strings = ''
-    for node in df.columns:
+    for node in valid_nodes:
         cpd = bn.get_cpds(node)
         cpd_strings += cpd_to_string(cpd)
         cpd_strings += 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
