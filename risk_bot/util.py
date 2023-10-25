@@ -210,17 +210,21 @@ def flatten_dict_values(d):
 
 def process_node(item):
     node_name, value = item
-    if isinstance(value, tuple) and len(value) == 2:
-        api, ticker = value
-        df = get_data(api, ticker)
-        if api == 'FRED':
-            df = pd.DataFrame(df, columns=[node_name])
-        else:
-            df = df.rename(columns={'Close': node_name})
-            df = df[[node_name]]
-        return df
-    else:
-        return pd.DataFrame(columns=[node_name])
+    try:    
+        if isinstance(value, tuple) and len(value) == 2:
+            api, ticker = value
+            df = get_data(api, ticker)
+            if api == 'FRED':
+                df = pd.DataFrame(df, columns=[node_name])
+            else:
+                df = df.rename(columns={'Close': node_name})
+                df = df[[node_name]]
+            return df
+    except ValueError:
+        print('ValueError: ', node_name, value)
+        pass
+    
+    return pd.DataFrame(columns=[node_name])
 
 def get_data_from_nodes(nodes):
     print('Inside get_data_from_nodes')
