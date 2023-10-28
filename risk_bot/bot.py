@@ -1,5 +1,6 @@
 import streamlit as st
 import re
+import graphviz
 from setup import Nodes, Edges, ProbabilityDistribution
 from util import extract_and_format_nodes, extract_and_format_edges, get_empty_cpd, get_edges, get_cpds
 from langchain.chat_models import ChatOpenAI
@@ -225,6 +226,13 @@ with text_container:
             query = 'I have edges denoting common causal relationships between nodes. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_edges'])
             response = risk_bot.edges_handler.get_response(query)
             st.session_state['responses'].append(response)
+            pattern= r"\((['\"])([^'\"].+?)\1\s*,\s*(['\"])([^'\"].+?)\3\)"
+            edges = re.findall(pattern, response)
+            edges = [(match[1], match[3]) for match in edges]
+            graph = graphviz.Digraph()
+            for edge in edges:
+                graph.edge(edge[0], edge[1])
+            st.graphviz_chart(graph)
     if st.session_state['edges']:
         extract_and_format_edges(st.session_state['edges'])
         if not st.session_state['tentative_cpds']:
