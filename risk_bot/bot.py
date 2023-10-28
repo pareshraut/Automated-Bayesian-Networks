@@ -68,6 +68,37 @@ class RiskBot:
             """
         ) 
 
+        probability_template = (
+            """
+### Initial Instructions:
+- Your goal is to assist in filling in the Conditional Probability Distribution (CPD) table provided by the user. You will suggest probabilities for each entry and adjust them based on the user's feedback.
+  
+- If the user indicates that the conversation is too technical, you should simplify your explanations.
+
+### Visual Representation:
+- To aid visualization, you might occasionally sketch out relationships between nodes, especially if it helps clarify the dependencies.
+  
+- For instance, if A and B are influencing C, you could visualize it as:
+  A (Category) -> C (Category) <- B (Category)
+
+- You can also use a CPD table to aid the user in visualizing the dependencies between nodes as well as categories of each node.
+
+### Data Collection:
+1. Starting with the CPD table for an independent node, such as [Node Name]:
+   - "Looking at [Node Name], potential categories could be '[Category 1]', '[Category 2]'. Based on your understanding, the probability for [Category 1] might be [X%]. Does this align with the user's thinking or would they suggest a different value?"
+
+2. For dependent nodes, where the probability of a node depends on the state of its parents:
+   - "Now, considering [Dependent Node Name] which is influenced by [Parent Node(s) Name]. Given [Parent Node Category], the probability of [Dependent Node Name] being in [Category] might be [Y%]. How does the user feel about this value?"
+
+3. You will proceed this way, filling out each entry of the CPD table one by one, proposing a value and adjusting it based on the user's feedback.
+
+### Continuous Feedback:
+- You should always be receptive to guidance from the user. If the user feels there's a more appropriate probability or if your suggestion doesn't seem right, you will adjust accordingly.
+
+### Completion:
+- After you've filled out the entire CPD table, you will provide a summary of the inputs and express gratitude for the user's collaboration.
+""")
+
         # )
         # probability_template = (
         #     "Your overarching task is to methodically elicit and document the probability distributions for each node in the Bayesian Network, ensuring clarity and precision at each step. Here's a step-by-step breakdown:"
@@ -101,45 +132,14 @@ class RiskBot:
         self.memory = memory
         self.nodes_handler = Nodes(self.memory, self.get_prompt(nodes_template), self.chat)
         self.edges_handler = Edges(self.memory, self.get_prompt(edges_template), self.chat)
-        #self.probability_handler = ProbabilityDistribution(self.memory, self.get_prompt(probability_template), self.chat)
-        self.probability_handler = None
+        self.probability_handler = ProbabilityDistribution(self.memory, self.get_prompt(probability_template), self.chat)
+        
         self.nodes_pattern = r"(?i)final nodes\s*:\s*(.*(?:\n|.)*)"
         self.edges_pattern = r"(?i)final edges\s*:\s*(.*(?:\n|.)*)"
         self.probability_pattern = r"(?i)final probability distribution\s*:\s*(.*(?:\n|.)*)"
         self.NODES = 'nodes'
         self.EDGES = 'edges'
         self.PROBABILITY = 'probability'
-
-    def get_probability_template(self):
-        return """
-Empty CPD: {0}
-
-### Initial Instructions:
-- Your goal is to assist in filling in the Conditional Probability Distribution (CPD) table provided by the user. You will suggest probabilities for each entry and adjust them based on the user's feedback.
-  
-- If the user indicates that the conversation is too technical, you should simplify your explanations.
-
-### Visual Representation:
-- To aid visualization, you might occasionally sketch out relationships between nodes, especially if it helps clarify the dependencies.
-  
-- For instance, if A and B are influencing C, you could visualize it as:
-  A (Category) -> C (Category) <- B (Category)
-
-### Data Collection:
-1. Starting with the CPD table for an independent node, such as [Node Name]:
-   - "Looking at [Node Name], potential categories could be '[Category 1]', '[Category 2]'. Based on your understanding, the probability for [Category 1] might be [X%]. Does this align with the user's thinking or would they suggest a different value?"
-
-2. For dependent nodes, where the probability of a node depends on the state of its parents:
-   - "Now, considering [Dependent Node Name] which is influenced by [Parent Node(s) Name]. Given [Parent Node Category], the probability of [Dependent Node Name] being in [Category] might be [Y%]. How does the user feel about this value?"
-
-3. You will proceed this way, filling out each entry of the CPD table one by one, proposing a value and adjusting it based on the user's feedback.
-
-### Continuous Feedback:
-- You should always be receptive to guidance from the user. If the user feels there's a more appropriate probability or if your suggestion doesn't seem right, you will adjust accordingly.
-
-### Completion:
-- After you've filled out the entire CPD table, you will provide a summary of the inputs and express gratitude for the user's collaboration.
-""".format(get_empty_cpd(st.session_state['edges']))
 
 
     def get_prompt(self, template):
@@ -162,11 +162,8 @@ Empty CPD: {0}
     def manage_risk(self, input_text):
         handler = self.get_current_handler_and_pattern()
         response = handler.get_response(input_text)
-        print('Pattern: ', st.session_state['pattern'])
         match = re.search(st.session_state['pattern'], response)
         if match:
-            # print match
-            print('match: ', match)
             if st.session_state.category == self.NODES:
                 st.session_state.category = self.EDGES
                 st.session_state['pattern'] = self.edges_pattern
@@ -175,8 +172,6 @@ Empty CPD: {0}
                 st.session_state.category = self.PROBABILITY
                 st.session_state['pattern'] = self.probability_pattern
                 st.session_state['edges'] = match.group(1)
-                self.probability_handler = ProbabilityDistribution(self.memory, self.get_prompt(self.get_probability_template()), self.chat)
-                response = self.probability_handler.get_response('Give me the probability distribution now.')
             else:
                 st.session_state['probability'] = match.group(1)
         st.cache(allow_output_mutation=True)
@@ -219,7 +214,7 @@ with text_container:
         with st.spinner("Thinking..."):
             response = risk_bot.manage_risk(query)
             st.session_state['requests'].append(query)
-            if not re.search(risk_bot.nodes_pattern, response):
+            if not re.search(risk_bot.nodes_pattern, response) and not re.search(risk_bot.edges_pattern, response) and not re.search(risk_bot.probability_pattern, response):
                 st.session_state['responses'].append(response)
 
     # Update session_state according to risk_bot's internal state

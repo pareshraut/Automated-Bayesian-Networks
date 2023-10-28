@@ -254,15 +254,17 @@ def get_data_from_nodes(nodes):
 
     for column in df.columns:
         num_unique = df[column].nunique()
-        
-        if num_unique < 3:
-
+        try:
+            if num_unique < 3:
+                df = df.drop(columns=[column])
+            else:
+                # We use min(3, num_unique-1) to ensure that we don't go beyond the number of labels we have defined
+                bins = min(3, num_unique - 1)
+                labels = label_map[bins]
+                df[column] = pd.qcut(df[column], q=bins, labels=labels, duplicates='drop')
+        except ValueError:
+            print('ValueError: ', column, num_unique)
             df = df.drop(columns=[column])
-        else:
-            # We use min(3, num_unique-1) to ensure that we don't go beyond the number of labels we have defined
-            bins = min(3, num_unique - 1)
-            labels = label_map[bins]
-            df[column] = pd.qcut(df[column], q=bins, labels=labels, duplicates='drop')
 
     return df
 
