@@ -178,7 +178,32 @@ class RiskBot:
         st.cache(allow_output_mutation=True)
         return response
         
-    
+@st.cache_data
+def create_graph(edges):
+    graph = graphviz.Digraph()
+    for edge in edges:
+        graph.edge(edge[0], edge[1])
+    return graph  # return the graph object instead of rendering it here
+def process_response(response):
+    pattern = r"((\((['\"])([^'\"].+?)\3\s*,\s*(['\"])([^'\"].+?)\5\)))+"
+    edges_pattern = r"\((['\"])([^'\"].+?)\1\s*,\s*(['\"])([^'\"].+?)\3\)"
+    edges = re.findall(edges_pattern, response)
+    edges = [(match[1], match[3]) for match in edges]
+    if len(edges) > 0:
+        graph = create_graph(edges)  # create the graph object
+        # Replace the matched portion with a placeholder
+        response_with_placeholder = re.sub(pattern, '{graph}', response)
+        return graph, response_with_placeholder
+    else:
+        return None, response
+
+def render_response(graph, response_with_placeholder):
+    segments = response_with_placeholder.split('{graph}')
+    for segment in segments[:-1]:
+        message(segment, key=f"{i}_{segments.index(segment)}")
+        st.graphviz_chart(graph)
+    message(segments[-1], key=f"{i}_{len(segments) - 1}")
+
 
 # Initialize the session_state variables
 if 'nodes' not in st.session_state:
@@ -201,6 +226,7 @@ if 'tentative_edges' not in st.session_state:
     st.session_state['tentative_edges'] = None
 if 'tentative_cpds' not in st.session_state:
     st.session_state['tentative_cpds'] = None
+    
 
 risk_bot = RiskBot(openai_api_key, st.session_state.buffer_memory)
 
@@ -210,6 +236,7 @@ text_container = st.container()
 
 
 with text_container:
+
     query = st.chat_input("Query", key="input")
     if query:    
         with st.spinner("Thinking..."):
@@ -226,13 +253,6 @@ with text_container:
             query = 'I have edges denoting common causal relationships between nodes. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_edges'])
             response = risk_bot.edges_handler.get_response(query)
             st.session_state['responses'].append(response)
-            pattern= r"\((['\"])([^'\"].+?)\1\s*,\s*(['\"])([^'\"].+?)\3\)"
-            edges = re.findall(pattern, response)
-            edges = [(match[1], match[3]) for match in edges]
-            graph = graphviz.Digraph()
-            for edge in edges:
-                graph.edge(edge[0], edge[1])
-            st.graphviz_chart(graph)
     if st.session_state['edges']:
         extract_and_format_edges(st.session_state['edges'])
         if not st.session_state['tentative_cpds']:
@@ -245,7 +265,12 @@ with text_container:
 with response_container:
     if st.session_state['responses']:
         for i in range(len(st.session_state['responses'])):
-            message(st.session_state['responses'][i], key=str(i))
+            before_text, graph, after_text = process_response(st.session_state['responses'][i])
+            if before_text:
+                message(before_text, key=str(i) + '_before')
+            if graph:
+                st.graphviz_chart(graph)
+            if after_text:
+                message(after_text, key=str(i) + '_after')
             if i < len(st.session_state['requests']):
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
-
