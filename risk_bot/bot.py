@@ -186,17 +186,19 @@ def create_graph(edges):
     return graph  # return the graph object instead of rendering it here
 
 def process_response(response):
-    pattern = r"\((['\"])([^'\"].+?)\1\s*,\s*(['\"])([^'\"].+?)\3\)"
-    edges = re.findall(pattern, response)
-    edges = [(match[1], match[3]) for match in edges]
-    if len(edges) > 0:
-        graph = create_graph(edges)  # create the graph object
-        # Split the response text at the first and last occurrence of the pattern
-        start = response.find(edges[0][0])
-        end = response.rfind(edges[-1][1]) + len(edges[-1][1])
-        return response[:start], graph, response[end:]
-    else:
-        return response, None, None
+    pattern = r"(\((['\"])([^'\"].+?)\2\s*,\s*(['\"])([^'\"].+?)\4\))"
+    matches = re.finditer(pattern, response)
+    segments = []
+    last_end = 0
+    for match in matches:
+        start, end = match.span()
+        segments.append(response[last_end:start])  # text before the match
+        edges = [(match.group(3), match.group(5))]
+        graph = create_graph(edges)
+        segments.append(graph)  # graph
+        last_end = end
+    segments.append(response[last_end:])  # text after the last match
+    return segments
 
 # Initialize the session_state variables
 if 'nodes' not in st.session_state:
@@ -258,12 +260,11 @@ with text_container:
 with response_container:
     if st.session_state['responses']:
         for i in range(len(st.session_state['responses'])):
-            before_text, graph, after_text = process_response(st.session_state['responses'][i])
-            if before_text:
-                message(before_text, key=str(i) + '_before')
-            if graph:
-                st.graphviz_chart(graph)
-            if after_text:
-                message(after_text, key=str(i) + '_after')
+            segments = process_response(st.session_state['responses'][i])
+            for segment in segments:
+                if not isinstance(segment, str):
+                    st.graphviz_chart(segment)
+                else:
+                    message(segment, key=f"{i}_{segments.index(segment)}")
             if i < len(st.session_state['requests']):
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
