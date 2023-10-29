@@ -192,13 +192,14 @@ def process_response(response):
     last_end = 0
     for match in matches:
         start, end = match.span()
-        segments.append(response[last_end:start])  # text before the match
+        segments.append(response[last_end:start - 1])  # text before the match
         edges = [(match.group(3), match.group(5))]
         graph = create_graph(edges)
         segments.append(graph)  # graph
         last_end = end
     segments.append(response[last_end:])  # text after the last match
     return segments
+
 
 # Initialize the session_state variables
 if 'nodes' not in st.session_state:
@@ -262,9 +263,9 @@ with response_container:
         for i in range(len(st.session_state['responses'])):
             segments = process_response(st.session_state['responses'][i])
             for segment in segments:
-                if not isinstance(segment, str):
-                    st.graphviz_chart(segment)
-                else:
+                if isinstance(segment, str):
                     message(segment, key=f"{i}_{segments.index(segment)}")
+                else:
+                    st.graphviz_chart(segment)
             if i < len(st.session_state['requests']):
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
