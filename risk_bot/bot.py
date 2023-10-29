@@ -190,13 +190,14 @@ def process_response(response):
     matches = re.finditer(pattern, response)
     segments = []
     last_end = 0
+    edges = []
     for match in matches:
         start, end = match.span()
         segments.append(response[last_end:start - 1])  # text before the match
-        edges = [(match.group(3), match.group(5))]
-        graph = create_graph(edges)
-        segments.append(graph)  # graph
+        edges.append([(match.group(3), match.group(5))])
         last_end = end
+    graph = create_graph(edges)
+    segments.append(graph) 
     segments.append(response[last_end:])  # text after the last match
     return segments
 
