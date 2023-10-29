@@ -186,24 +186,17 @@ def create_graph(edges):
     return graph  # return the graph object instead of rendering it here
 
 def process_response(response):
-    pattern = r"((\((['\"])([^'\"].+?)\3\s*,\s*(['\"])([^'\"].+?)\5\)))+"
-    edges_pattern = r"\((['\"])([^'\"].+?)\1\s*,\s*(['\"])([^'\"].+?)\3\)"
-    edges = re.findall(edges_pattern, response)
+    pattern = r"\((['\"])([^'\"].+?)\1\s*,\s*(['\"])([^'\"].+?)\3\)"
+    edges = re.findall(pattern, response)
     edges = [(match[1], match[3]) for match in edges]
     if len(edges) > 0:
         graph = create_graph(edges)  # create the graph object
-        # Replace the matched portion with a placeholder
-        response_with_placeholder = re.sub(pattern, '{graph}', response)
-        return graph, response_with_placeholder
+        # Split the response text at the first and last occurrence of the pattern
+        start = response.find(edges[0][0])
+        end = response.rfind(edges[-1][1]) + len(edges[-1][1])
+        return response[:start], graph, response[end:]
     else:
-        return None, response
-
-def render_response(graph, response_with_placeholder):
-    segments = response_with_placeholder.split('{graph}')
-    for segment in segments[:-1]:
-        message(segment, key=f"{i}_{segments.index(segment)}")
-        st.graphviz_chart(graph)
-    message(segments[-1], key=f"{i}_{len(segments) - 1}")
+        return response, None, None
 
 # Initialize the session_state variables
 if 'nodes' not in st.session_state:
@@ -265,10 +258,12 @@ with text_container:
 with response_container:
     if st.session_state['responses']:
         for i in range(len(st.session_state['responses'])):
-            graph, response_with_placeholder = process_response(st.session_state['responses'][i])
+            before_text, graph, after_text = process_response(st.session_state['responses'][i])
+            if before_text:
+                message(before_text, key=str(i) + '_before')
             if graph:
-                render_response(graph, response_with_placeholder)
-            else:
-                message(response_with_placeholder, key=str(i))
+                st.graphviz_chart(graph)
+            if after_text:
+                message(after_text, key=str(i) + '_after')
             if i < len(st.session_state['requests']):
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
