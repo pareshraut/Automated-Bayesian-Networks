@@ -184,6 +184,7 @@ def create_graph(edges):
     for edge in edges:
         graph.edge(edge[0], edge[1])
     return graph  # return the graph object instead of rendering it here
+
 def process_response(response):
     pattern = r"((\((['\"])([^'\"].+?)\3\s*,\s*(['\"])([^'\"].+?)\5\)))+"
     edges_pattern = r"\((['\"])([^'\"].+?)\1\s*,\s*(['\"])([^'\"].+?)\3\)"
@@ -203,7 +204,6 @@ def render_response(graph, response_with_placeholder):
         message(segment, key=f"{i}_{segments.index(segment)}")
         st.graphviz_chart(graph)
     message(segments[-1], key=f"{i}_{len(segments) - 1}")
-
 
 # Initialize the session_state variables
 if 'nodes' not in st.session_state:
@@ -265,12 +265,10 @@ with text_container:
 with response_container:
     if st.session_state['responses']:
         for i in range(len(st.session_state['responses'])):
-            before_text, graph, after_text = process_response(st.session_state['responses'][i])
-            if before_text:
-                message(before_text, key=str(i) + '_before')
+            graph, response_with_placeholder = process_response(st.session_state['responses'][i])
             if graph:
-                st.graphviz_chart(graph)
-            if after_text:
-                message(after_text, key=str(i) + '_after')
+                render_response(graph, response_with_placeholder)
+            else:
+                message(response_with_placeholder, key=str(i))
             if i < len(st.session_state['requests']):
                 message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
