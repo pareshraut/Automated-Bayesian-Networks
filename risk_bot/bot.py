@@ -1,6 +1,7 @@
 import streamlit as st
 import re
 import graphviz
+import ast
 from setup import Nodes, Edges, ProbabilityDistribution
 from util import extract_and_format_nodes, extract_and_format_edges, get_empty_cpd, get_edges, get_cpds
 from langchain.chat_models import ChatOpenAI
@@ -186,19 +187,32 @@ def create_graph(edges):
     return graph  # return the graph object instead of rendering it here
 
 def process_response(response):
-    pattern = r"(\((['\"])([^'\"].+?)\2\s*,\s*(['\"])([^'\"].+?)\4\))"
-    matches = re.finditer(pattern, response)
+    edge_pattern = re.compile(r"\[\s*((?:\([^)]+\)\s*,?\s*)+)\]")
+    match = re.search(edge_pattern, response)
     segments = []
     last_end = 0
     edges = []
-    for match in matches:
-        start, end = match.span()
-        segments.append(response[last_end:start - 1])  # text before the match
-        edges.append([(match.group(3), match.group(5))])
-        last_end = end
+    if match:
+        edges = ast.literal_eval(match.group(0))
+    else:
+        return [response]
+    
+    index = response.find(match.group(0))
+    print(index)
+    if index != -1:
+        segments.append(response[0:index])
+        last_end = index + len(match.group(0))
+
+    # Create the graph and append it as the last segment
     graph = create_graph(edges)
-    segments.append(graph) 
-    segments.append(response[last_end:])  # text after the last match
+    segments.append(graph)
+    # Append text after the edges string
+    segments.append(response[last_end:])
+
+    # # Create the graph and append it as the last segment
+    # graph = create_graph(edges)
+    # segments.append(graph)
+
     return segments
 
 
@@ -263,10 +277,24 @@ with response_container:
     if st.session_state['responses']:
         for i in range(len(st.session_state['responses'])):
             segments = process_response(st.session_state['responses'][i])
-            for segment in segments:
-                if isinstance(segment, str):
-                    message(segment, key=f"{i}_{segments.index(segment)}")
+            displayed_graph = False
+            for j, segment in enumerate(segments):
+                if isinstance(segment, str) and segment.strip():  # Check if the segment is a non-empty string
+                    if not displayed_graph:
+                        # First, check if this is the graph segment
+                        if "graph" in segment.lower():  # Adjust as needed
+                            st.graphviz_chart(segment)
+                            displayed_graph = True
+                        else:
+                            message(segment, key=f"{i}_text_{j}", avatar_style="bottts-neutral", seed = 'Aneka')
+                    else:
+                        message(segment, key=f"{i}_text_{j}", avatar_style="bottts-neutral",seed = 'Aneka')
                 else:
-                    st.graphviz_chart(segment)
+                    if not displayed_graph:
+                        st.graphviz_chart(segment)
+                        displayed_graph = True
             if i < len(st.session_state['requests']):
-                message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
+                message(st.session_state['requests'][i], is_user=True, key=f"{i}_user", avatar_style= "bottts-neutral", seed = 'Molly')
+
+
+
