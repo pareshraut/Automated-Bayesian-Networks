@@ -2,6 +2,7 @@ import streamlit as st
 import re
 import graphviz
 import ast
+import json
 from setup import Nodes, Edges, ProbabilityDistribution
 from util import extract_and_format_nodes, extract_and_format_edges, get_empty_cpd, get_edges, get_cpds
 from langchain.chat_models import ChatOpenAI
@@ -187,33 +188,58 @@ def create_graph(edges):
     return graph  # return the graph object instead of rendering it here
 
 def process_response(response):
-    edge_pattern = re.compile(r"\[\s*((?:\([^)]+\)\s*,?\s*)+)\]")
-    match = re.search(edge_pattern, response)
-    segments = []
-    last_end = 0
-    edges = []
-    if match:
-        edges = ast.literal_eval(match.group(0))
+    # Pattern to extract the dictionary
+    node_pattern = r'\{(?:\s*"[^"]+"\s*:\s*\[[^\]]*\]\s*,?)*\s*\}'
+    node_match = re.search(node_pattern, response)
+    start_index = response.find('[')
+    end_index = response.find(']')
+    
+    if node_match:
+        dictionary_str = node_match.group()
+        dictionary = json.loads(dictionary_str)
+        
+        # Get the original text before the dictionary
+        original_text = response[:node_match.start()]
+        
+        # Convert the dictionary to a Markdown table
+        table = "| Key | Values |\n| --- | --- |\n"
+        for key, values in dictionary.items():
+            values_str = ", ".join(values)
+            table += f"| {key} | {values_str} |\n"
+        
+        # Get the text after the dictionary
+        text_after_dict = response[node_match.end():]
+        
+        # Combine the original text, Markdown table, and text after the dictionary
+        combined_segment = f"{original_text}\n{table}\n{text_after_dict}"
+        
+        # Return the combined segment
+        return [combined_segment]
+
+    elif start_index != -1 and end_index != -1:
+        segments = []
+        last_end = 0
+        edges_str = response[start_index:end_index+1]
+        edges = ast.literal_eval(edges_str)
+            
+        
+        index = response.find(edges_str)
+        
+        if index != -1:
+            segments.append(response[0:index])
+            last_end = index + len(edges_str)
+        
+        # Create the graph and append it as the last segment
+        graph = create_graph(edges)
+        segments.append(graph)
+        
+        # Append text after the edges string
+        segments.append(response[last_end:])
+        
+        return segments
+
     else:
         return [response]
-    
-    index = response.find(match.group(0))
-    print(index)
-    if index != -1:
-        segments.append(response[0:index])
-        last_end = index + len(match.group(0))
-
-    # Create the graph and append it as the last segment
-    graph = create_graph(edges)
-    segments.append(graph)
-    # Append text after the edges string
-    segments.append(response[last_end:])
-
-    # # Create the graph and append it as the last segment
-    # graph = create_graph(edges)
-    # segments.append(graph)
-
-    return segments
 
 
 # Initialize the session_state variables
