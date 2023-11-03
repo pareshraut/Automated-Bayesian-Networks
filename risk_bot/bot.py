@@ -202,7 +202,7 @@ def process_response(response):
         original_text = response[:node_match.start()]
         
         # Convert the dictionary to a Markdown table
-        table = "| Key | Values |\n| --- | --- |\n"
+        table = "| Category | Nodes |\n| --- | --- |\n"
         for key, values in dictionary.items():
             values_str = ", ".join(values)
             table += f"| {key} | {values_str} |\n"

@@ -59,21 +59,18 @@ def extract_and_format_nodes(response):
                 st.write(item)
 
 def extract_and_format_edges(response):
-    formatted_data = []
-    start_idx = response.find('[')
-    end_idx = response.rfind(']') + 1
-    edge_data = response[start_idx:end_idx]
-    edges = re.findall(r'\("([^"]*)", "([^"]*)"\)', edge_data)
+    start_index = response.find('[')
+    end_index = response.find(']')
+    edges_str = response[start_index:end_index+1]
+    edges = ast.literal_eval(edges_str)
 
     with st.sidebar.expander("Current Edges"):
-        for item in formatted_data:
-            st.write(item)
+        edge_df = pd.DataFrame(edges, columns=["From", "To"])
+        st.table(edge_df.style.hide_index())
+
+
     
-    with st.sidebar.expander("Current Network"):
-        graph = graphviz.Digraph()
-        for edge in edges:
-            graph.edge(edge[0], edge[1])
-        st.graphviz_chart(graph)
+    
 
 def cpd_to_string(cpd):
     backup = TabularCPD._truncate_strtable
