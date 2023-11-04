@@ -27,110 +27,165 @@ class RiskBot:
         self.api_key = api_key
         self.chat = ChatOpenAI(temperature=0, openai_api_key=self.api_key, model='gpt-4')
         
+        # nodes_template = (
+        #     "As a supportive AI, your objective is to assist the user in finalizing a list of nodes for a specified risk scenario "
+        #     "within a Bayesian network framework. Initially, the user will share a scenario, and you are to respond with a list of nodes. "
+        #     "Please categorize the nodes into the subsequent categories: "
+        #     "Event Node, Opportunity Node (one node each), Trigger Nodes, "
+        #     "Mitigator Nodes, Control Nodes, External Influence Nodes, and Outcome Nodes (multiple nodes allowed for these categories). "
+        #     "Present each category and its corresponding nodes in JSON format, separated by lines. "
+        #     'For instance - {"Event Node": ["Risk of Apple stock going down by more than 5% in a week"], '
+        #     '"Opportunity Node": ["Percentage Change in Competitive Stock Price"], '
+        #     '"Trigger Nodes": ["Percentage Change in S&P 500 Index", "Percentage Change in Nasdaq 100 Index"], '
+        #     '"Mitigator Nodes": ["Apple\'s Dividend Yield", "Apple\'s Buyback Announcements"], '
+        #     '"Control Nodes": ["Percentage of Portfolio in Cash", "Percentage of Portfolio in Bond Investments"], '
+        #     '"External Influence Nodes": ["Federal Interest Rate", "US GDP Growth Rate"], '
+        #     '"Outcome Nodes": ["Percentage Change in Portfolio Value", "Return on Investment (ROI)"}. '
+        #     "ATTENTION:  After presenting the suggested nodes, ask the user : 'Do you have any feedback or modification for the nodes provided'"
+        #     "If the user provides feedback or requests changes to the nodes, incorporate their input and adjust the nodes accordingly."
+        #     "Ask the user if they are satisfied with the proposed nodes and if they wish to finalize the nodes for the Bayesian Network"
+        #     "If the user is not yet satisfied and requests further adjustments, iteratively provide revised nodes suggestions based on their feedback until they are ready to finalize the nodes."
+        #     """ATTENTION: ONCE THE USER REPLIES that he is fine with the nodes , I want you to give output in the below format:
+        #     Final nodes : enter the nodes that he finalized and is satisfied with here in the format of the example given
+        #     """
+        # )
         nodes_template = (
-            "As a supportive AI, your objective is to assist the user in finalizing a list of nodes for a specified risk scenario "
-            "within a Bayesian network framework. Initially, the user will share a scenario, and you are to respond with a list of nodes. "
-            "Please categorize the nodes into the subsequent categories: "
-            "Event Node, Opportunity Node (one node each), Trigger Nodes, "
-            "Mitigator Nodes, Control Nodes, External Influence Nodes, and Outcome Nodes (multiple nodes allowed for these categories). "
-            "Present each category and its corresponding nodes in JSON format, separated by lines. "
-            'For instance - {"Event Node": ["Risk of Apple stock going down by more than 5% in a week"], '
-            '"Opportunity Node": ["Percentage Change in Competitive Stock Price"], '
-            '"Trigger Nodes": ["Percentage Change in S&P 500 Index", "Percentage Change in Nasdaq 100 Index"], '
-            '"Mitigator Nodes": ["Apple\'s Dividend Yield", "Apple\'s Buyback Announcements"], '
-            '"Control Nodes": ["Percentage of Portfolio in Cash", "Percentage of Portfolio in Bond Investments"], '
-            '"External Influence Nodes": ["Federal Interest Rate", "US GDP Growth Rate"], '
-            '"Outcome Nodes": ["Percentage Change in Portfolio Value", "Return on Investment (ROI)"}. '
-            "ATTENTION:  After presenting the suggested nodes, ask the user : 'Do you have any feedback or modification for the nodes provided'"
-            "If the user provides feedback or requests changes to the nodes, incorporate their input and adjust the nodes accordingly."
-            "Ask the user if they are satisfied with the proposed nodes and if they wish to finalize the nodes for the Bayesian Network"
-            "If the user is not yet satisfied and requests further adjustments, iteratively provide revised nodes suggestions based on their feedback until they are ready to finalize the nodes."
-            """ATTENTION: ONCE THE USER REPLIES that he is fine with the nodes , I want you to give output in the below format:
-            Final nodes : enter the nodes that he finalized and is satisfied with here in the format of the example given
-            """
-        )
+    "As a supportive AI, your objective is to assist the user in finalizing a list of nodes for a specified risk scenario "
+    "within a Bayesian network framework. Initially, the user will share a scenario, and you are to respond with a list of nodes. "
+    "Please categorize the nodes into the subsequent categories: "
+    "Event Node, Opportunity Node (one node each), Trigger Nodes, "
+    "Mitigator Nodes, Control Nodes, External Influence Nodes, and Outcome Nodes (with exactly one risk outcome and one reward outcome). "
+    "Ensure that each node is quantifiable so that data can be retrieved for analysis. "
+    "Present each category and its corresponding nodes in JSON format, separated by lines. "
+    'For instance - {"Event Node": ["CPI Increase"], '
+    '"Opportunity Node": ["Core CPI Stability"], '
+    '"Trigger Nodes": ["Global oil price trends", "Import/export price indices"], '
+    '"Mitigator Nodes": ["Federal interest rate hike", "Decrease in M2 money supply"], '
+    '"Control Nodes": ["Fiscal policy changes"], '
+    '"External Influence Nodes": ["Global economic events"], '
+    '"Outcome Nodes": ["Hyperinflation scenario", "Inflation within target range"]}. '
+    "ATTENTION: After presenting the suggested nodes, ask the user : 'Do you have any feedback or modification for the nodes provided?' "
+    "If the user provides feedback or requests changes to the nodes, incorporate their input and adjust the nodes accordingly. "
+    "Ask the user if they are satisfied with the proposed nodes and if they wish to finalize the nodes for the Bayesian Network. "
+    "If the user is not yet satisfied and requests further adjustments, iteratively provide revised nodes suggestions based on their feedback until they are ready to finalize the nodes. "
+    "ATTENTION: ONCE THE USER REPLIES that he is fine with the nodes, I want you to give output in the below format: "
+    'Final nodes: {"Event Node": ["CPI Increase"], '
+    '"Opportunity Node": ["Core CPI Stability"], '
+    '"Trigger Nodes": ["Global oil price trends", "Import/export price indices"], '
+    '"Mitigator Nodes": ["Federal interest rate hike", "Decrease in M2 money supply"], '
+    '"Control Nodes": ["Fiscal policy changes"], '
+    '"External Influence Nodes": ["Global economic events"], '
+    '"Outcome Nodes": ["Hyperinflation scenario", ="Inflation within target range"]} '
+    "- enter the nodes that the user finalized and is satisfied with here in the format of the example given."
+)
+
+
+
+        # edges_template = (
+        #     "As an AI developed to assist in risk analysis within a Bayesian network, your role is to help construct a coherent list of edges "
+        #     "reflecting the scenario: 'Apple Stock going down by 5 percent in the next week'. "
+        #     "The edges should align with predefined nodes and the structure dictated by data-driven analysis. "
+        #     "The established rules for forming these causal connections are: "
+        #     "1. Connect each 'Trigger Node' to the 'Event Node'. "
+        #     "2. Connect each 'Trigger Node' to the 'Opportunity Node'. "
+        #     "3. Link 'Mitigator Nodes' to at least one 'Outcome Node'. "
+        #     "4. Link both the 'Event Node' and 'Opportunity Node' to at least one 'Outcome Node'. "
+        #     "5. Link each 'External Influence Node' to one of the 'Outcome Nodes'. "
+        #     "6. Link each 'Control Node' to one of the 'Outcome Nodes'. "
+        #     "**Make sure there are no loops or disconnectivity in the grpah**"
+        #     "**The provided suggested edges come from the data collected dynamically based on the nodes and not from the user. So your response should reflect that.**"
+        #     "**If these suggested edges deviate from the rules above, it should be incorporated but at the same time informed to the user.**"
+        #     "I want you to understand that the first suggestion for the edges come from dynamic data and not from the user. Your language while addressing the user should reflect that."
+        #     "**Always present edges as tuples in a list**. For example: "
+        #     "[('Market Conditions', 'Apple Stock'), ('Investor Sentiment', 'Apple Stock'), "
+        #     "('Apple Stock', 'Apple Stock Price'), ('Apple Stock Price', 'Apple Stock Return'), "
+        #     "('Apple Stock Return', 'Investment Return')]"
+        #     "Ensure that the list of tuples holds the norm for a python list of tuples. "
+        #     "After presenting the edges and any deviations, ask the user: 'Are you satisfied with the provided edges, or would you like to modify some of them?' "
+        #     "Incorporate user feedback to refine the edges, ensuring the network remains valid and well-structured. "
+        #     "Once the user is content with the edge configuration, present the final list as: "
+        #     "Final edges: [('Parent Node', 'Child Node'), ...]. "
+        #     "If further adjustments are needed, update the edge list accordingly and re-prompt the user, always striving for a coherent and loop-free network."
+        # )
 
         edges_template = (
-            "In the role of a supportive AI, your objective is to assist the user in finalizing a list of edges for a specified risk scenario within a Bayesian network framework. "
-            "You will adopt a 'Tree of Thought' reasoning strategy, systematically examining possible edge configurations while ensuring the integrity of the Bayesian Network by avoiding loops or disconnections. "
-            "Starting with the user-mentioned scenario: 'Apple Stock going down by 5 percent in the next week,' we will identify the pre-specified nodes and explore potential causal relationships between them. "
-            "We may engage in a collaborative effort with a panel of experts, iterating through edge definitions and configurations, refining the edges based on collective insights until a consensus on a valid edge configuration is reached. "
-            "Present the proposed edges to the user in a structured manner, illustrating the causal relationships between nodes. "
-            "Each edge is represented as a tuple of two nodes, where the first node is the parent node and the second node is the child node. "
-            "For instance - [(\"Market Conditions\", \"Apple Stock\")] "
-            "Return the edges as a list of tuples. Here is an example: "
-            """[(\"Market Conditions\", \"Apple Stock\"), (\"Investor Sentiment\", \"Apple Stock\"),
-            (\"Apple Stock\", \"Apple Stock Price\"), (\"Apple Stock Price\", \"Apple Stock Return\")], 
-            (\"Apple Stock Return\", \"Investment Return\")]"""
-            "After presenting the suggested edges, prompt the user with the question: 'Are you satisfied with the provided edges, or would you like to modify some of them?' "
-            "If the user requests changes to the edges, incorporate their input and adjust the edges accordingly, ensuring no closed loops or disconnected nodes. "
-            "If any closed loops or disconnected nodes occur, inform the user that the provided edges are not valid and ask them to revise. "
-            "Display the updated set of edges and prompt the user again: 'Are you satisfied with the updated edges, or would you like to further modify them?' "
-            """ATTENTION: ONCE THE USER REPLIES that he is fine with the edges , I want you to give output in the below format:
-            Final edges : enter the edges that he finalized and is satisfied with here in the format of the example given
-            """
-        ) 
+            "You are an AI that specializes in constructing and refining the structure of Bayesian Networks. "
+            "Your role is to suggest potential edges for a given set of nodes and to help incorporate user feedback "
+            "to optimize the network's configuration. The network consists of nodes categorized as: Event Node, "
+            "Opportunity Node, Trigger Nodes, Mitigator Nodes, Control Nodes, Impediment Nodes, External Influence Nodes, Outcome Nodes.\n\n"
+            "**Your tasks are as follows:**\n\n"
+            "1. **Edge Connection Rules:**\n"
+            "   - Connect the Event Node to the Risk Outcome.\n"
+            "   - Connect the Opportunity Node to the Reward Outcome.\n"
+            "   - Connect Trigger Nodes to both the Event Node and the Opportunity Node.\n"
+            "   - Connect Mitigator Nodes to the Risk Outcome.\n"
+            "   - Connect Control Nodes to the Event Node.\n"
+            "   - Connect External Influence Nodes to one of the Outcome Nodes.\n"
+            "   - Connect Impediment Nodes to the Opportunity Node and the Reward Outcome.\n\n"
+            "2. **Complexity Management:**\n"
+            "   - Introduce an intermediary node when any node's connections exceed three, to maintain manageable complexity.\n\n"
+            "3. **Network Consistency:**\n"
+            "   - Ensure that the network remains coherent, connected and loop-free. Add or remove an edge if that is not the case and apprise the user of the same.\n\n"
+            "4. **Suggestions and Feedback Integration:**\n"
+            "   - You will receive a list of edge suggestions based on dynamic data. Review and suggest necessary additions "
+            "or modifications to align with the established connection rules, noting deviations prompted by data-driven recommendations.\n\n"
+            "**Response Format:**\n\n"
+            "- Present all proposed edges as a list of tuples, following Python's list and tuple syntax. For example:\n"
+            "  [\n"
+            "    ('Fiscal policy changes', 'CPI Increase'),\n"
+            "    ('Core CPI Stability', 'Inflation within target range'),\n"
+            "    ('CPI Increase', 'Hyperinflation scenario'),\n"
+            "    ('Federal interest rate hike', 'Hyperinflation scenario'),\n"
+            "    ('Decrease in M2 money supply', 'Hyperinflation scenario'),\n"
+            "    ('Global oil price trends', 'CPI Increase'),\n"
+            "    ('Import/export price indices', 'Core CPI Stability'),\n"
+            "    ...\n"
+            "  ]\n"
+            "- After presenting the suggested edges, including any deviations, ask the user:\n"
+            "  \"Are you satisfied with the provided edges, or would you like to modify some of them?\"\n"
+            "- Integrate user feedback to refine the edges while maintaining a valid and well-structured network.\n\n"
+            "**Finalization:**\n\n"
+            "- Once the user approves the edge configuration, present the final list as:\n"
+            "  Final edges: [('Fiscal policy changes', 'CPI Increase'), ('Core CPI Stability', 'Inflation within target range'), ('CPI Increase', 'Hyperinflation scenario'), ('Federal interest rate hike', 'Hyperinflation scenario'), ('Decrease in M2 money supply', 'Hyperinflation scenario'), ('Global oil price trends', 'CPI Increase'), ('Import/export price indices', 'Core CPI Stability')].\n"
+            "- Should further adjustments be required, update the edge list accordingly and re-prompt the user, "
+            "always ensuring the network is coherent and free of loops.\n\n"
+            "**Remember:**\n"
+            "- Maintain a clear, concise, and coherent dialogue.\n"
+            "- Uphold the structural integrity of the Bayesian Network throughout the interaction.\n"
+            "- Keep the user engaged and informed during the edge refinement process."
+        )
+
 
         probability_template = (
-            """
-### Initial Instructions:
-- Your goal is to assist in filling in the Conditional Probability Distribution (CPD) table provided by the user. You will suggest probabilities for each entry and adjust them based on the user's feedback.
+    """### Initial Instructions:
+- Your role is to aid the user in completing a Conditional Probability Distribution (CPD) table. Suggest probabilities for each entry based on available data or user input, adjusting as needed.
   
-- If the user indicates that the conversation is too technical, you should simplify your explanations.
+- Communicate in straightforward terms to ensure understanding, particularly if the user is unfamiliar with technical concepts.
 
 ### Visual Representation:
-- To aid visualization, you might occasionally sketch out relationships between nodes, especially if it helps clarify the dependencies.
-  
-- For instance, if A and B are influencing C, you could visualize it as:
-  A (Category) -> C (Category) <- B (Category)
+- Illustrate dependencies between nodes when helpful, using a format like:
+  A (Trigger Node) -> C (Risk Node) <- B (Control Node)
 
-- You can also use a CPD table to aid the user in visualizing the dependencies between nodes as well as categories of each node.
+- Display CPD tables with missing values as '?', enclosed in triple backticks.
 
 ### Data Collection:
-1. Starting with the CPD table for an independent node, such as [Node Name]:
-   - "Looking at [Node Name], potential categories could be '[Category 1]', '[Category 2]'. Based on your understanding, the probability for [Category 1] might be [X%]. Does this align with the user's thinking or would they suggest a different value?"
+1. For independent nodes:
+   - Begin with [Node Name], suggesting categories and probabilities. Confirm or revise these with the user.
 
-2. For dependent nodes, where the probability of a node depends on the state of its parents:
-   - "Now, considering [Dependent Node Name] which is influenced by [Parent Node(s) Name]. Given [Parent Node Category], the probability of [Dependent Node Name] being in [Category] might be [Y%]. How does the user feel about this value?"
+2. For dependent nodes:
+   - Discuss the probabilities for [Dependent Node Name] considering the influence of [Parent Node(s) Name], seeking user agreement.
 
-3. You will proceed this way, filling out each entry of the CPD table one by one, proposing a value and adjusting it based on the user's feedback.
+3. Fill out the CPD table systematically, addressing one entry at a time and adapting to user feedback.
 
 ### Continuous Feedback:
-- You should always be receptive to guidance from the user. If the user feels there's a more appropriate probability or if your suggestion doesn't seem right, you will adjust accordingly.
+- Be responsive to user guidance, ready to modify probability estimates according to their suggestions.
 
 ### Completion:
-- After you've filled out the entire CPD table, you will provide a summary of the inputs and express gratitude for the user's collaboration.
-""")
+- After completing the CPD table, provide a summary and thank the user for their collaboration.
 
-        # )
-        # probability_template = (
-        #     "Your overarching task is to methodically elicit and document the probability distributions for each node in the Bayesian Network, ensuring clarity and precision at each step. Here's a step-by-step breakdown:"
-            
-        #     " 1. **Node Identification**:"
-        #     "    - Begin by methodically examining the network to identify the true independent nodes, which are nodes that do not have any incoming edges."
-            
-        #     " 2. **Category Suggestions and Confirmation**:"
-        #     "    - For every node, whether independent or dependent, propose appropriate categorizations based on its context and semantic nature."
-        #     "    - Interact with the user in a structured manner. For instance: 'For the node {Node Name}, we're considering the categories {Suggested Categories}. Do these resonate with your expectations, or would you prefer modifications?'"
-        #     "    - Be open to feedback. Adjust and reconfirm categories based on the user's input until mutual agreement is achieved for each node."
-            
-        #     " 3. **Probability Elicitation for Independent Nodes**:"
-        #     "    - Once all categories for the independent nodes are mutually agreed upon, initiate the probability elicitation phase."
-        #     "    - Instead of overwhelming the user with multiple requests, methodically ask for a single probability value corresponding to each category of an independent node. For instance: 'Considering the node {Node Name}, what's your estimated probability for the category {Category Name}?'"
-        #     "    - Take note of the user's response before proceeding to the next category or node."
-            
-        #     " 4. **Probability Elicitation for Dependent Nodes**:"
-        #     "    - With the independent nodes' probabilities documented, shift your focus to the dependent nodes."
-        #     "    - Given the categories of their parent nodes, solicit the conditional probabilities in a systematic manner, iterating through each combination of parent node categories."
-        #     "    - Prompt the user with structured queries, like: 'Given that {Parent Node 1} is {Category A} and {Parent Node 2} is {Category B}, what's your estimated probability for {Dependent Node} being {Category X}?'"
-            
-        #     " 5. **Documentation and Recap**:"
-        #     "    - As you accumulate these probabilities, ensure they're being systematically documented."
-        #     "    - Once all probabilities are captured, present a structured overview to the user for final verification. Ask: 'Here's the compiled probability distribution based on our discussion. Do these values align with your expectations, or are there any final adjustments you'd like to make?'"
-
-        #     "Remember, throughout this process, clarity, patience, and user feedback are paramount. The objective is not just to obtain probabilities but to ensure that the user is confident and clear about every value they provide."
-        # )
-        
+Note: Replace '?' with the suggested probabilities or leave it as a placeholder for the user to fill in. Use this as a template for the visual representation and not for the structure inside..
+"""
+)
 
         self.memory = memory
         self.nodes_handler = Nodes(self.memory, self.get_prompt(nodes_template), self.chat)
@@ -174,7 +229,9 @@ class RiskBot:
             elif st.session_state.category == self.EDGES:
                 st.session_state.category = self.PROBABILITY
                 st.session_state['pattern'] = self.probability_pattern
-                st.session_state['edges'] = match.group(1)
+                start_index = match.group(1).find('[')
+                end_index = match.group(1).find(']')
+                st.session_state['edges'] = match.group(1)[start_index:end_index+1]
             else:
                 st.session_state['probability'] = match.group(1)
         st.cache(allow_output_mutation=True)
@@ -287,14 +344,14 @@ with text_container:
         extract_and_format_nodes(st.session_state['nodes'])
         if not st.session_state['tentative_edges']:
             st.session_state['tentative_edges'] = get_edges(st.session_state['nodes'])
-            query = 'I have edges denoting common causal relationships between nodes. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_edges'])
+            query = 'Following are edges collected from dynamically collected data. Incorporate them in your response.{}.\nThis query does not come from the user.'.format(st.session_state['tentative_edges'])
             response = risk_bot.edges_handler.get_response(query)
             st.session_state['responses'].append(response)
     if st.session_state['edges']:
         extract_and_format_edges(st.session_state['edges'])
         if not st.session_state['tentative_cpds']:
             st.session_state['tentative_cpds'] = get_cpds(st.session_state['edges'])
-            query = 'I have a CPD table denoting the probability distribution of each node given the state of its parents. You can utilize these or propose additional suggestions.{}'.format(st.session_state['tentative_cpds'])
+            query = 'Following are CPDs collected from dynamically collected data. Incorporate them in your response.{}\nThis query does not come from the user.'.format(st.session_state['tentative_cpds'])
             response = risk_bot.probability_handler.get_response(query)
             st.session_state['responses'].append(response)
     if st.session_state['probability']:pass

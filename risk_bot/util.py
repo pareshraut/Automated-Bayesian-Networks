@@ -296,7 +296,6 @@ def get_edges(nodes):
     est = MmhcEstimator(df)
     model = est.estimate()
     edges = model.edges()
-    print(edges)
     return edges
 
 def get_cpds(edges):
@@ -316,6 +315,7 @@ def get_cpds(edges):
         cpd = bn.get_cpds(node)
         cpd_strings += cpd_to_string(cpd)
         cpd_strings += 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    print('cpd_strings: ', cpd_strings)
     return cpd_strings
 
 
