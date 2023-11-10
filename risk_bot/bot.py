@@ -22,6 +22,19 @@ st.write("""
 I am a Bayesian Risk Manager Bot, I can help you manage the risk in your scenario.
 """)
 
+# Category to color mapping
+category_colors = {
+    "Event Node": "lightblue",
+    "Opportunity Node": "green",
+    "Trigger Node": "red",
+    "Mitigator Node": "yellow",
+    "Impediment Node": "orange",
+    "Control Node": "grey",
+    "External Influence Node": "purple",
+    "Outcome Nodes": "pink"  # If there are multiple outcome nodes, you might need a list of colors or a way to distinguish them
+}
+
+
 class RiskBot:
     def __init__(self, api_key, memory):
         self.api_key = api_key
@@ -53,16 +66,17 @@ class RiskBot:
     "As a supportive AI, your objective is to assist the user in finalizing a list of nodes for a specified risk scenario "
     "within a Bayesian network framework. Initially, the user will share a scenario, and you are to respond with a list of nodes. "
     "Please categorize the nodes into the subsequent categories: "
-    "Event Node, Opportunity Node (one node each), Trigger Nodes, "
-    "Mitigator Nodes, Control Nodes, External Influence Nodes, and Outcome Nodes (with exactly one risk outcome and one reward outcome). "
+    "Event Node, Opportunity Node, Trigger Node, "
+    "Mitigator Node, Impediment Node, Control Node, External Influence Node, and Outcome Nodes (with exactly one risk outcome and one reward outcome). "
     "Ensure that each node is quantifiable so that data can be retrieved for analysis. "
     "Present each category and its corresponding nodes in JSON format, separated by lines. "
     'For instance - {"Event Node": ["CPI Increase"], '
     '"Opportunity Node": ["Core CPI Stability"], '
-    '"Trigger Nodes": ["Global oil price trends", "Import/export price indices"], '
-    '"Mitigator Nodes": ["Federal interest rate hike", "Decrease in M2 money supply"], '
-    '"Control Nodes": ["Fiscal policy changes"], '
-    '"External Influence Nodes": ["Global economic events"], '
+    '"Trigger Node": ["Global oil price trends"], '
+    '"Mitigator Node": ["Federal interest rate hike"], '
+    '"Impediment Node": ["Surge in Unemployment Rate"], '
+    '"Control Node": ["Fiscal policy changes"], '
+    '"External Influence Node": ["Global economic events"], '
     '"Outcome Nodes": ["Hyperinflation scenario", "Inflation within target range"]}. '
     "ATTENTION: After presenting the suggested nodes, ask the user : 'Do you have any feedback or modification for the nodes provided?' "
     "If the user provides feedback or requests changes to the nodes, incorporate their input and adjust the nodes accordingly. "
@@ -237,12 +251,40 @@ Note: Replace '?' with the suggested probabilities or leave it as a placeholder 
         st.cache(allow_output_mutation=True)
         return response
         
-@st.cache_data
-def create_graph(edges):
-    graph = graphviz.Digraph()
+# @st.cache_data
+# def create_graph(edges):
+#     graph = graphviz.Digraph()
+#     for edge in edges:
+#         graph.edge(edge[0], edge[1])
+#     return graph  # return the graph object instead of rendering it here
+
+def create_graph(categories, edges, width=None, height=None, dpi=100):
+    graph = graphviz.Digraph('G', format='png')
+    graph.attr(rankdir='LR', bgcolor='black')  # Set background color to black
+
+    if width and height:
+        graph.attr(size=f"{width},{height}!")
+        graph.attr(dpi=str(dpi))
+
+    # Apply color and styles to each node based on its category
+    for category, nodes in categories.items():
+        color = category_colors.get(category, "white")  # Default node color is white if category not found
+        fontcolor = "white" if color != "white" else "black"  # Set font color to white unless the node color is white
+        with graph.subgraph() as s:
+            s.attr('node', style='filled', fillcolor=color, fontcolor=fontcolor)
+            for node in nodes:
+                s.node(node)
+
+    # Set edge attributes to be visible on a black background
+    graph.attr('edge', color='white')
+
+    # Add edges to the graph
     for edge in edges:
         graph.edge(edge[0], edge[1])
-    return graph  # return the graph object instead of rendering it here
+
+    return graph
+
+
 
 def process_response(response):
     # Pattern to extract the dictionary
@@ -287,7 +329,7 @@ def process_response(response):
             last_end = index + len(edges_str)
         
         # Create the graph and append it as the last segment
-        graph = create_graph(edges)
+        graph = create_graph(ast.literal_eval(st.session_state['nodes']), edges)
         segments.append(graph)
         
         # Append text after the edges string

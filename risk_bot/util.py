@@ -145,7 +145,7 @@ def get_api(nodes):
     },
     {
         "input": '["Consumer Sentiment", "Housing Market Trends"]',
-        "output": '{"Consumer Sentiment": ("FRED", "UMCSENT"), "Housing Market Trends": ("YFinance", "HOMZ")}'
+        "output": '{"Consumer Sentiment": ("FRED", "UMCSENT"), "Housing Market Trends": ("YFinance", "CSUSHPINSA")}'
     }
 ]
 
@@ -164,7 +164,7 @@ def get_api(nodes):
 
     final_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are an AI tasked with selecting the most suitable API for each of the following nodes' requirements. "
+        ("system", "You are an AI tasked with selecting the most suitable API for each of the following nodes' requirements. You can also suggest node adjacent ticker that would capture the sentiment. "
                    "If you believe that none of these APIs will provide the required data, please reply with 'User'. "
                    "Here are the available APIs and their purposes: "
                    "1. FRED: Use FRED for macro and microeconomic indicators. "
