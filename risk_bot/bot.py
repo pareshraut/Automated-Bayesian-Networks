@@ -15,12 +15,28 @@ from langchain.prompts.chat import (
 from streamlit_chat import message
 from langchain.memory import ConversationBufferWindowMemory
 
-openai_api_key = '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'
+# openai_api_key = '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'
+
+st.set_page_config(
+    page_title="Bayesian - Risk Manager Chatbot",
+    page_icon="🤖",
+    layout="wide",
+)
+
+with st.sidebar:
+    openai_api_key = st.text_input("OpenAI API Key", type="password")
+    "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
+
 
 st.title("Bayesian - Risk Manager")
 st.write("""
-I am a Bayesian Risk Manager Bot, I can help you manage the risk in your scenario.
+I am a Bayesian Risk Manager Bot, helping you manage the risk in your scenario.
 """)
+
+
+if not openai_api_key:
+    st.error("Please add your OpenAI API key in the sidebar")
+    st.stop()
 
 # Category to color mapping
 category_colors = {
