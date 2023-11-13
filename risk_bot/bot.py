@@ -27,11 +27,42 @@ with st.sidebar:
     openai_api_key = st.text_input("OpenAI API Key", type="password")
     "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
 
+header = st.container()
+header.write(
+    """
+    <div class='fixed-header'>
+        <h1 style="margin: 0;">Bayesian - Risk Manager</h1>
+        <p style="margin: 0;">Helping you manage the risk in your scenario</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-st.title("Bayesian - Risk Manager")
-st.write("""
-I am a Bayesian Risk Manager Bot, helping you manage the risk in your scenario.
-""")
+st.markdown(
+    """
+<style>
+    div[data-testid="stVerticalBlock"] div:has(div.fixed-header) {
+        color: white;
+        position: sticky;
+        top: 2.875rem;
+        background-color: #0E1117;
+        z-index: 999;
+    }
+    .fixed-header {
+        border-bottom: 1px solid black;
+        text-align: center; /* Center the text */
+        padding: 10px; /* Add padding for better visibility */
+    }
+</style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# st.title("Bayesian - Risk Manager")
+# st.write("""
+# I am a Bayesian Risk Manager Bot, helping you manage the risk in your scenario.
+# """)
 
 
 if not openai_api_key:
@@ -427,15 +458,15 @@ with response_container:
                             st.graphviz_chart(segment)
                             displayed_graph = True
                         else:
-                            message(segment, key=f"{i}_text_{j}", avatar_style="bottts-neutral", seed = 'Aneka')
+                            message(segment, key=f"{i}_text_{j}", avatar_style="bottts-neutral", seed = 'Bailey')
                     else:
-                        message(segment, key=f"{i}_text_{j}", avatar_style="bottts-neutral",seed = 'Aneka')
+                        message(segment, key=f"{i}_text_{j}", avatar_style="bottts-neutral",seed = 'Bailey')
                 else:
                     if not displayed_graph:
                         st.graphviz_chart(segment)
                         displayed_graph = True
             if i < len(st.session_state['requests']):
-                message(st.session_state['requests'][i], is_user=True, key=f"{i}_user", avatar_style= "bottts-neutral", seed = 'Molly')
+                message(st.session_state['requests'][i], is_user=True, key=f"{i}_user", avatar_style= "bottts-neutral", seed = 'Angel')
 
 
 
