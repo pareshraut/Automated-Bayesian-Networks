@@ -1,9 +1,7 @@
 import re
 import streamlit as st
-import bnlearn as bn
-import graphviz
+from html import escape
 import ast
-import datetime
 from langchain.prompts import FewShotChatMessagePromptTemplate, ChatPromptTemplate
 from langchain.chat_models import ChatOpenAI
 import datetime
@@ -20,10 +18,20 @@ import yfinance as yf
 from pgmpy.models import BayesianNetwork
 from pgmpy.factors.discrete import TabularCPD
 from joblib import Parallel, delayed
+from pyvis import network as net
 
 
 # Set the FRED API key
 os.environ["FRED_API_KEY"] = "b73c11e70992c0501f8748360e192763"
+
+# Category to color mapping
+category_colors = {
+    "Trigger Node": "#0766E2",  # True Blue
+    "Risk Node": "#E20707",  # True Red
+    "Mitigator Node": "#FFD60A",  # True Yellow
+    "Outcome Node": "#42a45e"  # True Green
+}
+
 
 def extract_and_format_nodes(response):
     """
@@ -319,8 +327,143 @@ def get_cpds(edges):
     return cpd_strings
 
 
+def process_response(response):
+    # Pattern to extract the dictionary
+    #node_pattern = r'\{(?:\s*"[^"]+"\s*:\s*\[[^\]]*\]\s*,?)*\s*\}'
+    #node_match = re.search(node_pattern, response)
+    node_start_index = response.find('{')
+    node_end_index = response.rfind('}') + 1
+    edge_start_index = response.find('[')
+    edge_end_index = response.find(']')
+
+    if node_start_index != -1 and node_end_index != -1:
+        segments = []
+        last_end = 0
+        nodes_str = response[node_start_index:node_end_index+1]
+        nodes = ast.literal_eval(nodes_str)
+            
+        # Append the text before nodes as the first segment
+        if node_start_index > 0:
+            segments.append(response[0:node_start_index])
+        last_end = node_start_index + len(nodes_str)
+        
+        # Convert the dictionary to an HTML table with styling
+        table = """
+        <table class="styled-table">
+        <thead>
+            <tr><th>Category</th><th>Nodes</th></tr>
+        </thead>
+        <tbody>
+            """
+        
+        for key, values in nodes.items():
+            values_str = ", ".join(escape(value) for value in values)  # escape values to prevent HTML injection
+            table += f"""<tr>
+                <td>{escape(key)}</td>
+                <td class="tooltip">
+                    {values_str}
+                    <span class="tooltiptext">Additional info about {escape(key)}</span>
+                </td>
+            </tr>
+            """
+        
+        table += """
+        </tbody>
+        </table>
+        """
+
+        # Append the table as the next segment
+        segments.append(table)
+        
+        # Append text after the nodes string
+        segments.append(response[last_end:])
+        
+        # Return the combined segment
+        return segments
 
 
+    elif edge_start_index != -1 and edge_end_index != -1:
+        segments = []
+        last_end = 0
+        edges_str = response[edge_start_index:edge_end_index+1]
+        edges = ast.literal_eval(edges_str)
+            
+        # Append the text before edges as the first segment
+        if edge_start_index > 0:
+            segments.append(response[0:edge_start_index])
+        last_end = edge_start_index + len(edges_str)
+            
+        # Create the graph and append it as the next segment
+        print(st.session_state['nodes'])
+        graph = create_graph(ast.literal_eval(st.session_state['nodes']), edges)
+        segments.append(graph)
+        
+        # Append text after the edges string as the last segment
+        segments.append(response[last_end:])
+        
+        return segments
+
+    else:
+        return [response]
+
+def create_graph(nodes, edges):
+    print(nodes)
+    print(edges)
+    """Create a graph from the nodes and edges."""
+    g = net.Network(height="400px", width="100%", directed=True)
+    g.repulsion(
+        node_distance=320,
+        central_gravity=0.33,
+        spring_length=110,
+        spring_strength=0.10,
+        damping=0.95
+    )
+    for category, nodes_list in nodes.items():
+        for node in nodes_list:
+            g.add_node(node, label=node, color=category_colors.get(category, "white"))
+
+    for edge in edges:
+        g.add_edge(edge[0], edge[1])
+
+    g.save_graph('graph.html')
+
+    return 1
+    
+
+
+# def create_graph(categories, edges, width=None, height=None, dpi=100):
+#     graph = graphviz.Digraph('G', format='png')
+#     graph.attr(rankdir='LR', bgcolor='black')  # Set background color to black
+
+#     if width and height:
+#         graph.attr(size=f"{width},{height}!")
+#         graph.attr(dpi=str(dpi))
+
+#     # Apply color and styles to each node based on its category
+#     for category, nodes in categories.items():
+#         color = category_colors.get(category, "white")  # Default node color is white if category not found
+#         fontcolor = "white" if color != "white" else "black"  # Set font color to white unless the node color is white
+#         with graph.subgraph() as s:
+#             s.attr('node', style='filled', fillcolor=color, fontcolor=fontcolor)
+#             for node in nodes:
+#                 s.node(node)
+
+#     # Set edge attributes to be visible on a black background
+#     graph.attr('edge', color='white')
+
+#     # Add edges to the graph
+#     for edge in edges:
+#         graph.edge(edge[0], edge[1])
+
+#     return graph
+
+
+# @st.cache_data
+# def create_graph(edges):
+#     graph = graphviz.Digraph()
+#     for edge in edges:
+#         graph.edge(edge[0], edge[1])
+#     return graph  # return the graph object instead of rendering it here
 
 
 
