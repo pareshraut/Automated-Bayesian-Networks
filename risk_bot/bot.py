@@ -106,70 +106,80 @@ class RiskBot:
         )
 
 
+#         probability_template = (
+#     """### Initial Instructions:
+# - Your role is to aid the user in completing a Conditional Probability Distribution (CPD) table. Suggest probabilities for each entry based on available data or user input, adjusting as needed.
+  
+# - Communicate in straightforward terms to ensure understanding, particularly if the user is unfamiliar with technical concepts.
 
-        # edges_template = (
-        #     "Edge Template for Bayesian Network\n\n"
-        #     "Format: All edges as tuples in a list, e.g., [('Node A', 'Node B')].\n\n"
-        #     "Node Types: Risk, Opportunity, Trigger, Mitigator, Control, Impediment, External Influence.\n\n"
-        #     "Tasks:\n"
-        #     "Edge Connection Rules:\n"
-        #     "   - Trigger Node to Risk Node and Opportunity Node.\n"
-        #     "   - Mitigator Node and Control Node to Risk Node.\n"
-        #     "   - External Influence Node to Risk Node and Opportunity Node.\n"
-        #     "   - Impediment to Opportunity Node.\n"
-        #     "   Example: [('Trigger', 'Risk')].\n\n"
-        #     "Complexity Management:\n"
-        #     "   - Use intermediary nodes for >3 connections.\n"
-        #     "   Example: [('Node X', 'Intermediary'), ('Intermediary', 'Node Y')].\n\n"
-        #     "Network Consistency:\n"
-        #     "   - Ensure coherence, connectivity, no loops.\n"
-        #     "   Example: [('Node A', 'Node B')].\n\n"
-        #     "Feedback Integration:\n"
-        #     "   - Integrate suggestions, maintaining tuple list format.\n\n"
-        #     "Response Format:\n"
-        #     "   - Present edges as tuples, ask for user feedback.\n"
-        #     "   - Example: [('Data Node', 'Node 2')].\n\n"
-        #     "Finalization:\n"
-        #     "   - Present final edges as tuple list after approval.\n"
-        #     "   - Example: [('Policy Change', 'CPI Increase')].\n\n"
-        #     "Remember:\n"
-        #     "   - Clear, concise dialogue.\n"
-        #     "   - Maintain network integrity using tuple list format.\n"
-        #     "   - Engage user with consistent format adherence.\n"
-        # )
+# ### Visual Representation:
+# - Illustrate dependencies between nodes when helpful, using a format like:
+#   A (Trigger Node) -> C (Risk Node) <- B (Control Node)
 
+# - Display CPD tables with missing values as '?', enclosed in triple backticks.
 
+# ### Data Collection:
+# 1. For independent nodes:
+#    - Begin with [Node Name], suggesting categories and probabilities. Confirm or revise these with the user.
+
+# 2. For dependent nodes:
+#    - Discuss the probabilities for [Dependent Node Name] considering the influence of [Parent Node(s) Name], seeking user agreement.
+
+# 3. Fill out the CPD table systematically, addressing one entry at a time and adapting to user feedback.
+
+# ### Continuous Feedback:
+# - Be responsive to user guidance, ready to modify probability estimates according to their suggestions.
+
+# ### Completion:
+# - After completing the CPD table, provide a summary and thank the user for their collaboration.
+
+# Note: Replace '?' with the suggested probabilities or leave it as a placeholder for the user to fill in. Use this as a template for the visual representation and not for the structure inside..
+# """
+# )
 
         probability_template = (
-    """### Initial Instructions:
-- Your role is to aid the user in completing a Conditional Probability Distribution (CPD) table. Suggest probabilities for each entry based on available data or user input, adjusting as needed.
-  
-- Communicate in straightforward terms to ensure understanding, particularly if the user is unfamiliar with technical concepts.
-
-### Visual Representation:
-- Illustrate dependencies between nodes when helpful, using a format like:
-  A (Trigger Node) -> C (Risk Node) <- B (Control Node)
-
-- Display CPD tables with missing values as '?', enclosed in triple backticks.
-
-### Data Collection:
-1. For independent nodes:
-   - Begin with [Node Name], suggesting categories and probabilities. Confirm or revise these with the user.
-
-2. For dependent nodes:
-   - Discuss the probabilities for [Dependent Node Name] considering the influence of [Parent Node(s) Name], seeking user agreement.
-
-3. Fill out the CPD table systematically, addressing one entry at a time and adapting to user feedback.
-
-### Continuous Feedback:
-- Be responsive to user guidance, ready to modify probability estimates according to their suggestions.
-
-### Completion:
-- After completing the CPD table, provide a summary and thank the user for their collaboration.
-
-Note: Replace '?' with the suggested probabilities or leave it as a placeholder for the user to fill in. Use this as a template for the visual representation and not for the structure inside..
-"""
-)
+            "### Initial Instructions:\n"
+            "- Assist in completing a Conditional Probability Distribution (CPD) table, using both data and user input.\n"
+            "- Use simple language for users unfamiliar with technical concepts.\n\n"
+            "### Present Initial CPD from Data:\n"
+            "- Initially present the CPD, derived from data, in a dictionary format for user review.\n"
+            "  Example initial CPD:\n"
+            "  initial_cpd_dict = {\n"
+            "      \"variable\": \"Data-derived Variable\",\n"
+            "      \"variable_cardinality\": Data-derived Number of States,\n"
+            "      \"probabilities\": {\"State 1\": Data-derived Probability, \"State 2\": Data-derived Probability},\n"
+            "      \"evidence\": [\"Data-derived Parent Node 1\", \"Parent Node 2\"],\n"
+            "      \"evidence_cardinality\": [Data-derived Cardinality],\n"
+            "      \"state_names\": {\"Variable Name\": [\"State Name 1\", \"State Name 2\"],\n"
+            "                       \"Parent Node 1\": [\"State Name 1\", \"State Name 2\"]}\n"
+            "  }\n"
+            "  - Ask the user to review and provide feedback.\n\n"
+            "### Data Collection Process:\n"
+            "1. For Independent Nodes:\n"
+            "   - Start with [Node Name], suggest probabilities, and confirm with the user.\n"
+            "2. For Dependent Nodes:\n"
+            "   - Discuss probabilities for [Dependent Node Name] based on [Parent Node(s) Name].\n"
+            "3. Complete the CPD table systematically, adapting to user feedback.\n\n"
+            "### Continuous Feedback:\n"
+            "- Adjust probability estimates based on user input.\n\n"
+            "### Example Format for Final Probability Values:\n"
+            "- After user confirmation, present probabilities like:\n"
+            "  final_cpd_dict = {\n"
+            "      \"variable\": \"Variable Name\",\n"
+            "      \"variable_cardinality\": Number of States,\n"
+            "      \"probabilities\": {\"State 1\": Probability, \"State 2\": Probability},\n"
+            "      \"evidence\": [\"Parent Node 1\", \"Parent Node 2\"],\n"
+            "      \"evidence_cardinality\": [Cardinality of Parent Node 1, 2],\n"
+            "      \"state_names\": {\"Variable Name\": [\"State 1\", \"State 2\"],\n"
+            "                       \"Parent Node 1\": [\"State 1\", \"State 2\"]}\n"
+            "  }\n"
+            "### Completion for Each Variable:\n"
+            "- State 'Final Probability Distribution:' with values in the suggested format upon confirmation.\n\n"
+            "### Overall Completion:\n"
+            "- End with 'Done with the probability distribution' after all variables.\n\n"
+            "### Gradual Elicitation and Confirmation:\n"
+            "- Elicit probabilities in a way that's easy to understand, asking broadly about the likelihood of different outcomes or scenarios.\n"
+        )
 
         self.memory = memory
         self.nodes_handler = Nodes(self.memory, self.get_prompt(nodes_template), self.chat)
@@ -283,7 +293,7 @@ with text_container:
             st.session_state['responses'].append(response)
     if st.session_state['probability']:pass
 
-problematic_tokens = ['```json', '```json\n', '```', '```\n', '```dot', '```graphviz', 'plaintext\n', 'plaintext']
+problematic_tokens = ['```json', '```json\n', '```', '```\n', '```dot', '```graphviz', 'plaintext\n', 'plaintext', '```plaintext', '```plaintext\n']
 
 with response_container:
     if st.session_state['responses']:

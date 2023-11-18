@@ -328,87 +328,130 @@ def get_cpds(edges):
 
 
 def process_response(response):
-    # Pattern to extract the dictionary
-    #node_pattern = r'\{(?:\s*"[^"]+"\s*:\s*\[[^\]]*\]\s*,?)*\s*\}'
-    #node_match = re.search(node_pattern, response)
-    node_start_index = response.find('{')
-    node_end_index = response.rfind('}') + 1
-    edge_start_index = response.find('[')
-    edge_end_index = response.find(']')
+    try:
+        response = response.replace('```json\n', '')
+        response = response.replace('```', '')
+        # Pattern to extract the dictionary
+        #node_pattern = r'\{(?:\s*"[^"]+"\s*:\s*\[[^\]]*\]\s*,?)*\s*\}'
+        #node_match = re.search(node_pattern, response)
+        node_start_index = response.find('{')
+        node_end_index = response.rfind('}') + 1
+        edge_start_index = response.find('[')
+        edge_end_index = response.find(']')
 
-    if node_start_index != -1 and node_end_index != -1:
-        segments = []
-        last_end = 0
-        nodes_str = response[node_start_index:node_end_index+1]
-        nodes = ast.literal_eval(nodes_str)
+        if response.count('{') > 1 and response.count('}') > 1:
+            print('Here')
+            # New block for handling multiple CPD dictionaries
+            segments = []
+            last_end = 0
+            pattern = r'\{.*?\}'
+            matches = re.finditer(pattern, response, re.DOTALL)
+            for match in matches:
+                cpd_str = match.group()
+                cpd_start, cpd_end = match.span()
+                cpd_dict = ast.literal_eval(cpd_str)
+
+                # Append text before CPD string
+                if cpd_start > last_end:
+                    segments.append(response[last_end:cpd_start])
+                last_end = cpd_end
+
+                # Convert CPD dictionary to HTML table
+                table = "<table class='styled-table'>\n<thead>\n<tr>"
+                for key in cpd_dict.keys():
+                    table += f"<th>{escape(key)}</th>"
+                table += "</tr>\n</thead>\n<tbody>\n<tr>"
+                for value in cpd_dict.values():
+                    if isinstance(value, dict):
+                        value = ', '.join(f'{k} ({v})' for k, v in value.items())
+                    elif isinstance(value, list):
+                        value = ', '.join(str(v) for v in value)
+                    else:
+                        value = str(value)
+                    table += f"<td>{escape(value)}</td>"
+                table += "</tr>\n</tbody>\n</table>\n"
+                
+                # Append CPD table
+                segments.append(table)
+
+            # Append remaining text
+            segments.append(response[last_end:])
+            return segments
+
+        elif node_start_index != -1 and node_end_index != -1:
+            segments = []
+            last_end = 0
+            nodes_str = response[node_start_index:node_end_index+1]
+            nodes = ast.literal_eval(nodes_str)
+                
+            # Append the text before nodes as the first segment
+            if node_start_index > 0:
+                segments.append(response[0:node_start_index])
+            last_end = node_start_index + len(nodes_str)
             
-        # Append the text before nodes as the first segment
-        if node_start_index > 0:
-            segments.append(response[0:node_start_index])
-        last_end = node_start_index + len(nodes_str)
-        
-        # Convert the dictionary to an HTML table with styling
-        table = """
-        <table class="styled-table">
-        <thead>
-            <tr><th>Category</th><th>Nodes</th></tr>
-        </thead>
-        <tbody>
+            # Convert the dictionary to an HTML table with styling
+            table = """
+            <table class="styled-table">
+            <thead>
+                <tr><th>Category</th><th>Nodes</th></tr>
+            </thead>
+            <tbody>
+                """
+            
+            for key, values in nodes.items():
+                values_str = ", ".join(escape(value) for value in values)  # escape values to prevent HTML injection
+                table += f"""<tr>
+                    <td>{escape(key)}</td>
+                    <td class="tooltip">
+                        {values_str}
+                        <span class="tooltiptext">Additional info about {escape(key)}</span>
+                    </td>
+                </tr>
+                """
+            
+            table += """
+            </tbody>
+            </table>
             """
-        
-        for key, values in nodes.items():
-            values_str = ", ".join(escape(value) for value in values)  # escape values to prevent HTML injection
-            table += f"""<tr>
-                <td>{escape(key)}</td>
-                <td class="tooltip">
-                    {values_str}
-                    <span class="tooltiptext">Additional info about {escape(key)}</span>
-                </td>
-            </tr>
-            """
-        
-        table += """
-        </tbody>
-        </table>
-        """
 
-        # Append the table as the next segment
-        segments.append(table)
-        
-        # Append text after the nodes string
-        segments.append(response[last_end:])
-        
-        # Return the combined segment
-        return segments
-
-
-    elif edge_start_index != -1 and edge_end_index != -1:
-        segments = []
-        last_end = 0
-        edges_str = response[edge_start_index:edge_end_index+1]
-        edges = ast.literal_eval(edges_str)
+            # Append the table as the next segment
+            segments.append(table)
             
-        # Append the text before edges as the first segment
-        if edge_start_index > 0:
-            segments.append(response[0:edge_start_index])
-        last_end = edge_start_index + len(edges_str)
+            # Append text after the nodes string
+            segments.append(response[last_end:])
             
-        # Create the graph and append it as the next segment
-        print(st.session_state['nodes'])
-        graph = create_graph(ast.literal_eval(st.session_state['nodes']), edges)
-        segments.append(graph)
-        
-        # Append text after the edges string as the last segment
-        segments.append(response[last_end:])
-        
-        return segments
+            # Return the combined segment
+            return segments
 
-    else:
-        return [response]
+
+        elif edge_start_index != -1 and edge_end_index != -1:
+            segments = []
+            last_end = 0
+            edges_str = response[edge_start_index:edge_end_index+1]
+            edges = ast.literal_eval(edges_str)
+                
+            # Append the text before edges as the first segment
+            if edge_start_index > 0:
+                segments.append(response[0:edge_start_index])
+            last_end = edge_start_index + len(edges_str)
+                
+            # Create the graph and append it as the next segment
+            graph = create_graph(ast.literal_eval(st.session_state['nodes']), edges)
+            segments.append(graph)
+            
+            # Append text after the edges string as the last segment
+            segments.append(response[last_end:])
+            
+            return segments
+
+        else:
+            return [response]
+
+    except SyntaxError as e:
+        print(e)
+        print(response)
 
 def create_graph(nodes, edges):
-    print(nodes)
-    print(edges)
     """Create a graph from the nodes and edges."""
     g = net.Network(height="400px", width="100%", directed=True)
     g.repulsion(
