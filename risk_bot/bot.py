@@ -138,48 +138,40 @@ class RiskBot:
 # )
 
         probability_template = (
-            """### Initial Instructions:
-            - Assist in completing a Conditional Probability Distribution (CPD) table iteratively, using both derived data and user input.
-            - Use simple language for users unfamiliar with technical concepts.
-            ### Iterative CPD Completion Process:
-            1. **Present Initial CPD from Data:**
-                - Initially, present the CPD, derived from data, in a dictionary format for user review.
-                    Example initial CPD:
-                    initial_cpd_dict = {
-                        "variable": "Data-derived Variable",
-                        "variable_cardinality": Data-derived Number of States,
-                        "probabilities": {"State 1": Data-derived Probability, "State 2": Data-derived Probability},
-                        "evidence": ["Data-derived Parent Node 1", "Parent Node 2"],
-                        "evidence_cardinality": [Data-derived Cardinality],
-                        "state_names": {"Variable Name": ["State Name 1", "State Name 2"],
-                                        "Parent Node 1": ["State Name 1", "State Name 2"]}
-                    }
-                - Ask the user to review and provide feedback.
-
-            2. **Data Collection Process (Iterative):**
-                - For each variable:
-                    a. Use derived data to suggest probabilities for independent nodes.
-                    b. Discuss probabilities for dependent nodes based on parent node(s).
-                    c. Adjust probability estimates based on user input.
-                    d. Present final CPD in the following format after user confirmation:
-                        final_cpd_dict = {
-                            "variable": "Variable Name",
-                            "variable_cardinality": Number of States,
-                            "probabilities": {"State 1": Probability, "State 2": Probability},
-                            "evidence": ["Parent Node 1", "Parent Node 2"],
-                            "evidence_cardinality": [Cardinality of Parent Node 1, 2],
-                            "state_names": {"Variable Name": ["State 1", "State 2"],
-                                            "Parent Node 1": ["State 1", "State 2"]}
-                        }
-                    e. State 'Final Probability Distribution:' with values upon confirmation.
-
-            3. **Overall Completion:**
-                - End with 'Done with the probability distribution' after all variables.
-
-            ### Gradual Elicitation and Confirmation:
-            - Elicit probabilities in a way that's easy to understand, asking broadly about the likelihood of different outcomes or scenarios.
-
-            REMEMBER: ALWAYS USE THE SAME FORMAT FOR THE INITIAL AND FINAL CPD DICTIONARIES AND SHOW ONLY ONE VARIABLE CPD AT ONCE."""
+            "### Step-by-Step Iterative Process for CPD Confirmation:\n\n"
+            "Step 1: Introduction\n"
+            "- Begin by explaining to the user that you will assist in completing a Conditional Probability Distribution (CPD) table, using easy-to-understand language.\n"
+            "- Clarify that the process is designed for those without a background in probability.\n\n"
+            "Step 2: Initial CPD Presentation in Natural Language\n"
+            "- Present the first CPD derived from data in simple, natural language.\n"
+            "- Example presentation: 'For the first variable, let's consider how likely different outcomes are. For example, there's a chance that outcome A could happen, and outcome B might happen this often...'\n"
+            "- Encourage the user to provide their thoughts and feedback on these initial probability estimations.\n\n"
+            "Step 3: User Feedback and Adjustment\n"
+            "- Discuss the presented probabilities for the variable with the user, using everyday terms.\n"
+            "- Adjust the probabilities based on user feedback, still using natural language for clarity.\n\n"
+            "Step 4: Confirm and Finalize CPD for One Variable\n"
+            "- Once the user confirms the probabilities for the first variable, prepare the final CPD in the specified dictionary format for backend parsing.\n"
+            "- This step will not be presented to the user but is rather for backend processing.\n"
+            "- Example final CPD format:\n"
+            "  ```\n"
+            "  final_cpd_dict = {\n"
+            "      'variable': 'Confirmed Variable',\n"
+            "      'variable_cardinality': Number of States,\n"
+            "      'probabilities': {'State 1': Confirmed Probability, 'State 2': Confirmed Probability},\n"
+            "      'evidence': ['Parent Node 1'],\n"
+            "      'evidence_cardinality': [Cardinality],\n"
+            "      'state_names': {'Variable Name': ['State 1', 'State 2']}\n"
+            "  }\n"
+            "  ```\n\n"
+            "Step 5: Iterative Process for Subsequent Variables\n"
+            "- Repeat Steps 2 to 4 for each subsequent variable. Present and confirm one variable at a time in a user-friendly manner.\n"
+            "- Ensure each variable is fully confirmed and finalized before moving to the next.\n\n"
+            "Step 6: Completion of All Variables\n"
+            "- After all variables have been discussed, adjusted, and confirmed, announce 'Done with all the probability values'.\n\n"
+            "### Gradual Elicitation and Confirmation:\n"
+            "- Throughout the process, explain probabilities and outcomes in everyday language, avoiding technical terms.\n"
+            "- Focus on understanding the user's perspective and clarify any doubts in a friendly manner.\n\n"
+            "REMEMBER: Present initial CPDs in natural language for user understanding. Return confirmed CPDs in dictionary format for backend parsing, focusing on one variable at a time."
         )
 
         self.memory = memory
@@ -247,7 +239,7 @@ if 'responses' not in st.session_state:
 if 'requests' not in st.session_state:
     st.session_state['requests'] = []
 if 'buffer_memory' not in st.session_state:
-    st.session_state['buffer_memory'] = ConversationBufferWindowMemory(k=20, return_messages=True)
+    st.session_state['buffer_memory'] = ConversationBufferWindowMemory(k=50, return_messages=True)
 if 'category' not in st.session_state:
     st.session_state['category'] = 'nodes'
 if 'pattern' not in st.session_state:
