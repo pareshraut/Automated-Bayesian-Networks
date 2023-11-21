@@ -23,7 +23,7 @@ st.set_page_config(
 
 )
 
-with open("/Users/pandita/Automated-Bayesian-Networks/risk_bot/styles.css") as f:                                                # Reading style.css file and opening it 
+with open("styles.css") as f:                                                
     st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
 
 with st.sidebar:
@@ -138,47 +138,48 @@ class RiskBot:
 # )
 
         probability_template = (
-            "### Initial Instructions:\n"
-            "- Assist in completing a Conditional Probability Distribution (CPD) table, using both data and user input.\n"
-            "- Use simple language for users unfamiliar with technical concepts.\n\n"
-            "### Present Initial CPD from Data:\n"
-            "- Initially present the CPD, derived from data, in a dictionary format for user review.\n"
-            "  Example initial CPD:\n"
-            "  initial_cpd_dict = {\n"
-            "      \"variable\": \"Data-derived Variable\",\n"
-            "      \"variable_cardinality\": Data-derived Number of States,\n"
-            "      \"probabilities\": {\"State 1\": Data-derived Probability, \"State 2\": Data-derived Probability},\n"
-            "      \"evidence\": [\"Data-derived Parent Node 1\", \"Parent Node 2\"],\n"
-            "      \"evidence_cardinality\": [Data-derived Cardinality],\n"
-            "      \"state_names\": {\"Variable Name\": [\"State Name 1\", \"State Name 2\"],\n"
-            "                       \"Parent Node 1\": [\"State Name 1\", \"State Name 2\"]}\n"
-            "  }\n"
-            "  - Ask the user to review and provide feedback.\n\n"
-            "### Data Collection Process:\n"
-            "1. For Independent Nodes:\n"
-            "   - Start with [Node Name], suggest probabilities, and confirm with the user.\n"
-            "2. For Dependent Nodes:\n"
-            "   - Discuss probabilities for [Dependent Node Name] based on [Parent Node(s) Name].\n"
-            "3. Complete the CPD table systematically, adapting to user feedback.\n\n"
-            "### Continuous Feedback:\n"
-            "- Adjust probability estimates based on user input.\n\n"
-            "### Example Format for Final Probability Values:\n"
-            "- After user confirmation, present probabilities like:\n"
-            "  final_cpd_dict = {\n"
-            "      \"variable\": \"Variable Name\",\n"
-            "      \"variable_cardinality\": Number of States,\n"
-            "      \"probabilities\": {\"State 1\": Probability, \"State 2\": Probability},\n"
-            "      \"evidence\": [\"Parent Node 1\", \"Parent Node 2\"],\n"
-            "      \"evidence_cardinality\": [Cardinality of Parent Node 1, 2],\n"
-            "      \"state_names\": {\"Variable Name\": [\"State 1\", \"State 2\"],\n"
-            "                       \"Parent Node 1\": [\"State 1\", \"State 2\"]}\n"
-            "  }\n"
-            "### Completion for Each Variable:\n"
-            "- State 'Final Probability Distribution:' with values in the suggested format upon confirmation.\n\n"
-            "### Overall Completion:\n"
-            "- End with 'Done with the probability distribution' after all variables.\n\n"
-            "### Gradual Elicitation and Confirmation:\n"
-            "- Elicit probabilities in a way that's easy to understand, asking broadly about the likelihood of different outcomes or scenarios.\n"
+            """### Initial Instructions:
+            - Assist in completing a Conditional Probability Distribution (CPD) table iteratively, using both derived data and user input.
+            - Use simple language for users unfamiliar with technical concepts.
+            ### Iterative CPD Completion Process:
+            1. **Present Initial CPD from Data:**
+                - Initially, present the CPD, derived from data, in a dictionary format for user review.
+                    Example initial CPD:
+                    initial_cpd_dict = {
+                        "variable": "Data-derived Variable",
+                        "variable_cardinality": Data-derived Number of States,
+                        "probabilities": {"State 1": Data-derived Probability, "State 2": Data-derived Probability},
+                        "evidence": ["Data-derived Parent Node 1", "Parent Node 2"],
+                        "evidence_cardinality": [Data-derived Cardinality],
+                        "state_names": {"Variable Name": ["State Name 1", "State Name 2"],
+                                        "Parent Node 1": ["State Name 1", "State Name 2"]}
+                    }
+                - Ask the user to review and provide feedback.
+
+            2. **Data Collection Process (Iterative):**
+                - For each variable:
+                    a. Use derived data to suggest probabilities for independent nodes.
+                    b. Discuss probabilities for dependent nodes based on parent node(s).
+                    c. Adjust probability estimates based on user input.
+                    d. Present final CPD in the following format after user confirmation:
+                        final_cpd_dict = {
+                            "variable": "Variable Name",
+                            "variable_cardinality": Number of States,
+                            "probabilities": {"State 1": Probability, "State 2": Probability},
+                            "evidence": ["Parent Node 1", "Parent Node 2"],
+                            "evidence_cardinality": [Cardinality of Parent Node 1, 2],
+                            "state_names": {"Variable Name": ["State 1", "State 2"],
+                                            "Parent Node 1": ["State 1", "State 2"]}
+                        }
+                    e. State 'Final Probability Distribution:' with values upon confirmation.
+
+            3. **Overall Completion:**
+                - End with 'Done with the probability distribution' after all variables.
+
+            ### Gradual Elicitation and Confirmation:
+            - Elicit probabilities in a way that's easy to understand, asking broadly about the likelihood of different outcomes or scenarios.
+
+            REMEMBER: ALWAYS USE THE SAME FORMAT FOR THE INITIAL AND FINAL CPD DICTIONARIES AND SHOW ONLY ONE VARIABLE CPD AT ONCE."""
         )
 
         self.memory = memory
