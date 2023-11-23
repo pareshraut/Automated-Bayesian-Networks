@@ -152,8 +152,8 @@ def get_api(nodes):
         "output": '{"Oil Prices": ("YFinance", "OIL"), "Stock Market Performance": ("YFinance", "SPY")}'
     },
     {
-        "input": '["Consumer Sentiment", "Housing Market Trends"]',
-        "output": '{"Consumer Sentiment": ("FRED", "UMCSENT"), "Housing Market Trends": ("YFinance", "CSUSHPINSA")}'
+        "input": '["Consumer Sentiment", "Stock Performance: Gain or Loss"]',
+        "output": '{"Consumer Sentiment": ("FRED", "UMCSENT"), "Stock Performance: Gain or Loss": "User"}'
     }
 ]
 
@@ -328,24 +328,41 @@ def get_cpds(edges):
     print('cpd_strings: ', cpd_strings)
     return cpd_strings
 
+# def capture_multiple_dictionaries(input_string):
+#     # Initialize variables to count '{' and '}' characters
+#     start_index = 0
+#     count = 0
+#     dictionaries = []
+    
+#     # Iterate through the characters in the input string
+#     for i, char in enumerate(input_string):
+#         if char == '{':
+#             if count == 0:
+#                 start_index = i
+#             count += 1
+#         elif char == '}':
+#             count -= 1
+#             if count == 0:
+#                 dictionaries.append(input_string[start_index:i + 1])
+    
+#     return dictionaries
 
 def process_response(response):
     try:
-        response = response.replace('```json\n', '')
-        response = response.replace('```', '')
+        # response = response.replace('```json\n', '')
+        # response = response.replace('```', '')
         node_start_index = response.find('{')
         node_end_index = response.rfind('}') + 1
         edge_start_index = response.find('[')
         edge_end_index = response.find(']')
 
         if response.count('{') > 1 and response.count('}') > 1:
-            print('here')
+            print(response)
             segments = []
             last_end = 0
-            pattern = r'{(?:[^{}]*{[^{}]*}[^{}]*)*}'
-            # compiled_pattern = re.compile(pattern, re.MULTILINE | re.DOTALL)
-            # matches = compiled_pattern.findall(response)
-            matches = re.findall(pattern, response, re.DOTALL)
+            #matches = capture_multiple_dictionaries(response)
+            pattern = re.compile(r'```(.*?)```', re.MULTILINE | re.DOTALL)
+            matches = pattern.findall(response)
             for match in matches:
                 cpd_start, cpd_end = response.index(match), response.index(match) + len(match)
                 #import pdb; pdb.set_trace()
@@ -356,20 +373,46 @@ def process_response(response):
                     segments.append(response[last_end:cpd_start])
                 last_end = cpd_end
 
-                # Convert CPD dictionary to HTML table
+                # # Convert CPD dictionary to HTML table
+                # table = "<table class='styled-table'>\n<thead>\n<tr>"
+                # for key in cpd_dict.keys():
+                #     table += f"<th>{escape(key)}</th>" 
+                # table += "</tr>\n</thead>\n<tbody>\n<tr>"
+                # for value in cpd_dict.values():
+                #     if isinstance(value, dict):
+                #         value = ', '.join(f'{k} ({v})' for k, v in value.items()) 
+                #     elif isinstance(value, list):
+                #         value = ', '.join(str(v) for v in value)
+                #     else:
+                #         value = str(value)
+                #     table += f"<td>{escape(value)}</td>"
+                # table += "</tr>\n</tbody>\n</table>\n"
+
+                # Determine the structure of the CPD dictionary
                 table = "<table class='styled-table'>\n<thead>\n<tr>"
-                for key in cpd_dict.keys():
-                    table += f"<th>{escape(key)}</th>" 
-                table += "</tr>\n</thead>\n<tbody>\n<tr>"
-                for value in cpd_dict.values():
-                    if isinstance(value, dict):
-                        value = ', '.join(f'{k} ({v})' for k, v in value.items()) 
-                    elif isinstance(value, list):
-                        value = ', '.join(str(v) for v in value)
-                    else:
-                        value = str(value)
-                    table += f"<td>{escape(value)}</td>"
-                table += "</tr>\n</tbody>\n</table>\n"
+                if all(isinstance(key, str) and isinstance(value, float) for key, value in cpd_dict.items()):
+                    # Case 1: Single-level dictionary with string keys and float values
+                    headers = list(cpd_dict.keys())
+                    table += ''.join(f"<th>{escape(header)}</th>" for header in headers)
+                    table += "</tr>\n</thead>\n<tbody>\n<tr>"
+                    values = list(cpd_dict.values())
+                    table += ''.join(f"<td>{escape(str(value))}</td>" for value in values)
+                elif all(isinstance(key, str) and isinstance(value, dict) for key, value in cpd_dict.items()):
+                    # Case 2: Multi-level dictionary with string keys and inner dictionaries
+                    headers = list(cpd_dict.keys())
+                    inner_keys = list(cpd_dict[headers[0]].keys())
+                    table += ''.join(f"<th>{escape(header)}</th>" for header in headers)
+                    table += "</tr>\n</thead>\n<tbody>\n"
+                    for inner_key in inner_keys:
+                        table += f"<tr>"
+                        for header in headers:
+                            table += f"<td>{escape(str(cpd_dict[header].get(inner_key, '')))}</td>"
+                        table += "</tr>\n"
+                else:
+                    # Handle other cases as needed
+                    table += "<th>Header</th><td>Data</td>"  # Modify this for other cases
+
+                table += "</tbody>\n</table>\n"
                 
                 # Append CPD table  
                 segments.append(table)
