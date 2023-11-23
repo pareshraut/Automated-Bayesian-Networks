@@ -23,12 +23,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-<<<<<<< Updated upstream
-with open("risk_bot/styles.css") as f:                                                
+with open("styles.css") as f:                                                
     st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
 
-=======
->>>>>>> Stashed changes
 with st.sidebar:
     openai_api_key = st.text_input("OpenAI API Key", type="password")
     # "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
