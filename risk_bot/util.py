@@ -400,19 +400,25 @@ def process_response(response):
             
             for key, values in nodes.items():
                 values_str = ", ".join(escape(value) for value in values)  # escape values to prevent HTML injection
+
+                # Define information for each category
+                category_info = {
+                                    "Risk Node": "A 'Risk Node' in the Bayesian network represents an uncertain event or condition that may have negative consequences.",
+                                    "Trigger Node": "A 'Trigger Node' in the Bayesian network represents an event or condition that can lead to the occurrence of another event.",
+                                    "Mitigator Node": "A 'Mitigator Node' in the Bayesian network represents a factor or action that can reduce the impact or likelihood of a risk.",
+                                    "Outcome Node": "An 'Outcome Node' in the Bayesian network represents the result or consequence of a set of events and conditions."
+                                }
+
+                category_description = category_info.get(key, "No information available for this category.")
+
                 table += f"""<tr>
                     <td>{escape(key)}</td>
                     <td class="tooltip">
                         {values_str}
-                        <span class="tooltiptext">Additional info about {escape(key)}</span>
+                        <span class="tooltiptext">{category_description}</span>
                     </td>
                 </tr>
                 """
-            
-            table += """
-            </tbody>
-            </table>
-            """
 
             # Append the table as the next segment
             segments.append(table)

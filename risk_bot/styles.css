@@ -128,8 +128,6 @@ section[data-testid='stSidebar'] .st-bx {
 /* input text box to the bottom of the sidebar */
 div[data-testid='stTextInput'] {
     position: absolute;
-    bottom: 0;
-    left : 0;
     width: 100%;
 }
 
@@ -140,7 +138,7 @@ div[data-testid='stTextInput'] {
 div[data-testid="stVerticalBlock"] div:has(div.fixed-header) {
     color: #000000;
     position: sticky;
-    top: 2.875rem;
+    /*top: 2.875rem;*/
     background-color: #FFFFFF;
     z-index: 999;
 }
@@ -155,7 +153,7 @@ div[data-testid="stVerticalBlock"] div:has(div.fixed-header) {
     margin: 25px 0;
     font-size: 0.9em;
     font-family: sans-serif;
-    min-width: 400px;
+    min-width: 900px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
     border-radius: 10px; /* Rounded edges */
     overflow: hidden; /* Ensures the rounded edges contain the table rows */
@@ -184,15 +182,15 @@ div[data-testid="stVerticalBlock"] div:has(div.fixed-header) {
 }
 .tooltip .tooltiptext {
     visibility: hidden;
-    width: 120px;
+    width: 500px;
     background-color: black;
     color: #fff;
     text-align: center;
     border-radius: 6px;
     padding: 5px 0;
     position: absolute;
-    z-index: 1;
-    bottom: 100%;
+    z-index: 2;
+    top:-10px;
     left: 50%;
     margin-left: -60px;
     opacity: 0;

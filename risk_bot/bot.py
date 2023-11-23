@@ -15,20 +15,28 @@ import streamlit.components.v1 as components
 
 # openai_api_key = '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'
 
+
 st.set_page_config(
     page_title="Bayesian - Risk Manager Chatbot",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
-
 )
 
+<<<<<<< Updated upstream
 with open("risk_bot/styles.css") as f:                                                
     st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
 
+=======
+>>>>>>> Stashed changes
 with st.sidebar:
     openai_api_key = st.text_input("OpenAI API Key", type="password")
     # "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
+
+
+with open("styles.css") as f:                                                
+    st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
+
 
 header = st.container()
 header.write(
@@ -40,12 +48,11 @@ header.write(
     """,
     unsafe_allow_html=True
 )
-
+ 
 # st.title("Bayesian - Risk Manager")
 # st.write("""
 # I am a Bayesian Risk Manager Bot, helping you manage the risk in your scenario.
 # """)
-
 
 if not openai_api_key:
     st.error("Please add your OpenAI API key in the sidebar")
