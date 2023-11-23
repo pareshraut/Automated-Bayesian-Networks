@@ -80,7 +80,7 @@ div[data-testid='stExpander'] {
     margin: 5px 0; /* Margin around the expander */
     padding: 10px; /* Padding inside the expander */
     height: 4%;
-    bottom: 5;
+    bottom: 60px;
     right: 0;
     color: #000000;
 }
@@ -127,8 +127,11 @@ section[data-testid='stSidebar'] .st-bx {
 
 /* input text box to the bottom of the sidebar */
 div[data-testid='stTextInput'] {
-    position: absolute;
-    width: 100%;
+    position: fixed;
+    width: 20%;
+    bottom: 30px;
+    padding: 10;
+    /* z-index: 999; */
 }
 
 /* Style the radio buttons */
