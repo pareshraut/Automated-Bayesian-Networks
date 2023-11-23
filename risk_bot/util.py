@@ -74,7 +74,7 @@ def extract_and_format_edges(response):
 
     with st.sidebar.expander("Current Edges"):
         edge_df = pd.DataFrame(edges, columns=["From", "To"])
-        st.table(edge_df.style.hide_index())
+        st.table(edge_df.style.hide(axis="index"))
 
 
     
@@ -195,6 +195,8 @@ def get_data(api, ticker):
         s = fred.get_series(ticker, observation_start="2023-01-01", observation_end= current_date)
         return s
     elif api == 'YFinance':
+        if ticker == 'VIX':
+            ticker = '^VIX'
         data = yf.download(ticker, start="2023-01-01", end=current_date)
         return data
     else:
@@ -331,25 +333,23 @@ def process_response(response):
     try:
         response = response.replace('```json\n', '')
         response = response.replace('```', '')
-        # Pattern to extract the dictionary
-        #node_pattern = r'\{(?:\s*"[^"]+"\s*:\s*\[[^\]]*\]\s*,?)*\s*\}'
-        #node_match = re.search(node_pattern, response)
         node_start_index = response.find('{')
         node_end_index = response.rfind('}') + 1
         edge_start_index = response.find('[')
         edge_end_index = response.find(']')
 
         if response.count('{') > 1 and response.count('}') > 1:
-            print('Here')
-            # New block for handling multiple CPD dictionaries
+            print('here')
             segments = []
             last_end = 0
-            pattern = r'\{.*?\}'
-            matches = re.finditer(pattern, response, re.DOTALL)
+            pattern = r'{(?:[^{}]*{[^{}]*}[^{}]*)*}'
+            # compiled_pattern = re.compile(pattern, re.MULTILINE | re.DOTALL)
+            # matches = compiled_pattern.findall(response)
+            matches = re.findall(pattern, response, re.DOTALL)
             for match in matches:
-                cpd_str = match.group()
-                cpd_start, cpd_end = match.span()
-                cpd_dict = ast.literal_eval(cpd_str)
+                cpd_start, cpd_end = response.index(match), response.index(match) + len(match)
+                #import pdb; pdb.set_trace()
+                cpd_dict = ast.literal_eval(match)
 
                 # Append text before CPD string
                 if cpd_start > last_end:
@@ -359,11 +359,11 @@ def process_response(response):
                 # Convert CPD dictionary to HTML table
                 table = "<table class='styled-table'>\n<thead>\n<tr>"
                 for key in cpd_dict.keys():
-                    table += f"<th>{escape(key)}</th>"
+                    table += f"<th>{escape(key)}</th>" 
                 table += "</tr>\n</thead>\n<tbody>\n<tr>"
                 for value in cpd_dict.values():
                     if isinstance(value, dict):
-                        value = ', '.join(f'{k} ({v})' for k, v in value.items())
+                        value = ', '.join(f'{k} ({v})' for k, v in value.items()) 
                     elif isinstance(value, list):
                         value = ', '.join(str(v) for v in value)
                     else:
@@ -371,7 +371,7 @@ def process_response(response):
                     table += f"<td>{escape(value)}</td>"
                 table += "</tr>\n</tbody>\n</table>\n"
                 
-                # Append CPD table
+                # Append CPD table  
                 segments.append(table)
 
             # Append remaining text

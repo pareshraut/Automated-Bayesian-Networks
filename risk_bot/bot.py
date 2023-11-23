@@ -23,7 +23,7 @@ st.set_page_config(
 
 )
 
-with open("styles.css") as f:                                                
+with open("risk_bot/styles.css") as f:                                                
     st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
 
 with st.sidebar:
@@ -50,6 +50,35 @@ header.write(
 if not openai_api_key:
     st.error("Please add your OpenAI API key in the sidebar")
     st.stop()
+
+# Initialize the session_state variables
+if 'nodes' not in st.session_state:
+    st.session_state['nodes'] = None
+if 'edges' not in st.session_state:
+    st.session_state['edges'] = None
+if 'probability' not in st.session_state:
+    st.session_state['probability'] = None
+if 'responses' not in st.session_state:
+    st.session_state['responses'] = ["Hi, Please tell me your scenario"]
+if 'requests' not in st.session_state:
+    st.session_state['requests'] = []
+if 'buffer_memory' not in st.session_state:
+    st.session_state['buffer_memory'] = ConversationBufferWindowMemory(k=50, return_messages=True)
+if 'category' not in st.session_state:
+    st.session_state['category'] = 'nodes'
+if 'pattern' not in st.session_state:
+    st.session_state['pattern'] = r"(?i)final nodes\s*:\s*(.*(?:\n|.)*)"
+if 'sidebar_node' not in st.session_state:
+    st.session_state['sidebar_node'] = None
+if 'sidebar_edge' not in st.session_state:
+    st.session_state['sidebar_edge'] = None
+if 'sidebar_cpd' not in st.session_state:
+    st.session_state['sidebar_cpd'] = None
+if 'tentative_edges' not in st.session_state:
+    st.session_state['tentative_edges'] = None
+if 'tentative_cpds' not in st.session_state:
+    st.session_state['tentative_cpds'] = None
+    
 
 class RiskBot:
     def __init__(self, api_key, memory):
@@ -137,24 +166,118 @@ class RiskBot:
 # """
 # )
 
+        # probability_template = (
+        #     "### Step-by-Step Iterative Process for CPD Confirmation:\n\n"
+        #     "Step 1: Introduction\n"
+        #     "- Begin by explaining to the user that you will assist in completing a Conditional Probability Distribution (CPD) table, using easy-to-understand language.\n"
+        #     "- Clarify that the process is designed for those without a background in probability.\n\n"
+        #     "Step 2: Initial CPD Presentation in Natural Language through a conversation\n"
+        #     "- Present the first CPD derived from data in simple, natural language (and not tables).\n"
+        #     "- Example presentation: 'For the first variable, let's consider how likely different outcomes are. For example, there's a chance that outcome A could happen, and outcome B might happen this often...'\n"
+        #     "- Encourage the user to provide their thoughts and feedback on these initial probability estimations.\n\n"
+        #     "Step 3: User Feedback and Adjustment\n"
+        #     "- Discuss the presented probabilities for the variable with the user, using everyday terms.\n"
+        #     "- Adjust the probabilities based on user feedback, still using natural language for clarity.\n\n"
+        #     "Step 4: Confirm and Finalize CPD for One Variable\n"
+        #     "- Once the user confirms the probabilities for the first variable, prepare the final CPD in the specified dictionary format for backend parsing.\n"
+        #     "- This step will not be presented to the user but is rather for backend processing.\n"
+        #     "- Example final CPD format:\n"
+        #     "  ```\n"
+        #     "  final_cpd_dict = {\n"
+        #     "      'variable': 'Confirmed Variable',\n"
+        #     "      'variable_cardinality': Number of States,\n"
+        #     "      'probabilities': {'State 1': Confirmed Probability, 'State 2': Confirmed Probability},\n"
+        #     "      'evidence': ['Parent Node 1'],\n"
+        #     "      'evidence_cardinality': [Cardinality],\n"
+        #     "      'state_names': {'Variable Name': ['State 1', 'State 2']}\n"
+        #     "  }\n"
+        #     "  ```\n\n"
+        #     "Step 5: Iterative Process for Subsequent Variables\n"
+        #     "- Repeat Steps 2 to 4 for each subsequent variable. Present and confirm one variable at a time in a user-friendly manner.\n"
+        #     "- Ensure each variable is fully confirmed and finalized before moving to the next.\n\n"
+        #     "Step 6: Completion of All Variables\n"
+        #     "- After all variables have been discussed, adjusted, and confirmed, announce 'Done with all the probability values'.\n\n"
+        #     "### Gradual Elicitation and Confirmation:\n"
+        #     "- Throughout the process, explain probabilities and outcomes in everyday language, avoiding technical terms.\n"
+        #     "- Focus on understanding the user's perspective and clarify any doubts in a friendly manner.\n\n"
+        #     "REMEMBER: Present initial CPDs in natural language for user understanding and not in a tabular format. Return confirmed CPDs in dictionary format for backend parsing, focusing on one variable at a time."
+        # )
+
+        # probability_template = (
+        #     "You are a part of an AI chatbot that is trying to help a user assess the risk of a trade using a Bayesian network. Your specific job is to help the user complete a Conditional Probability Distribution (CPD) table. You will be suggesting probabilities for each entry based on available data or user input, adjusting as needed. The user has no understanding of Bayesian networks and probabilites and your language is to reflect that. Use simple terms while communicating with the user.\n"
+        #     "Step 1: Present the each probability passed from the backend (as part of CPDs) in natural language through a conversation. This step has to be iterative confirming one value at a time. Use non-technical jargon to explain the probabilites. For example, there's a chance that outcome A could happen, and outcome B might happen this often...\n"
+        #     "Step 2: Incorporate the user's feedback and adjust the probabilities accordingly.\n"
+        #     "Step 3: Follow this method for all variables for which the CPDs are passed from the backend, one by one. Again, use language that is intuitive to a layman. \n"
+        #     "Step 4: Follow the same process for the variables for which the CPDs are not passed from the backend, one by one. In this case, you have to elicit the CPDs from the user.\n"
+        #     "Step 5: Once all the CPDs are confirmed, announce 'Done with all the probability values'.\n"
+        #     "Step 6: Return the confirmed CPDs in dictionary format for backend parsing, focusing on one variable at a time. Use the following format:"
+        #     "  ```\n"
+        #     "  final_cpd_dict = {\n"
+        #     "      'variable': 'Confirmed Variable',\n"
+        #     "      'variable_cardinality': Number of States,\n"
+        #     "      'probabilities': {'State 1': Confirmed Probability, 'State 2': Confirmed Probability},\n"
+        #     "      'evidence': ['Parent Node 1'],\n"
+        #     "      'evidence_cardinality': [Cardinality],\n"
+        #     "      'state_names': {'Variable Name': ['State 1', 'State 2']}\n"
+        #     "  }\n"
+        #     "  ```\n\n"
+        #     "REMEMBER: Account for all relationships while eliciting the CPDs."
+        # )
+        # probability_template = (
+        #     "You are a part of an AI chatbot that is trying to help a user assess the risk of a trade using a Bayesian network. Your specific job is to help the user complete a Conditional Probability Distribution (CPD) table. You will be suggesting probabilities for each entry based on available data or user input, adjusting as needed. The user has no understanding of Bayesian networks and probabilites and your language is to reflect that. Use simple terms while communicating with the user.\n"
+        #     "Step 1: Present the first CPD provided from backend as dictionary in following format:\n"
+        #     "  ```\n"
+        #     "{\n"
+        #     "      'variable': 'Confirmed Variable',\n"
+        #     "      'variable_cardinality': Number of States,\n"
+        #     "      'probabilities': {'State 1': Confirmed Probability, 'State 2': Confirmed Probability},\n"
+        #     "      'evidence': ['Parent Node 1'],\n"
+        #     "      'evidence_cardinality': [Cardinality],\n"
+        #     "      'state_names': {'Variable Name': ['State 1', 'State 2']}\n"
+        #     "  }\n"
+        #     "  ```\n"
+        #     "***IMPORTANT***: Start and end the dictionary with triple ticks (```)"
+        #     #"Explain the CPDs to a user in natural language using non-technical jargon. For example, there's a chance that outcome A could happen, and outcome B might happen this often...\n"
+        #     "Focus on one CPD in each message for the already provided CPDs.\n"
+        #     "Step 2: Incorporate the user's feedback and adjust the probabilities accordingly.\n"
+        #     "Step 3: Follow this method for all variables for which the CPDs are passed from the backend, one by one.\n"
+        #     "Step 4: For the variables for which CPDs are missing, elicit the CPDs from the user. Present and confirm one variable at a time in a user-friendly manner. Remember to keep in mind all parents and their combinations.\n"
+        #     "***IMPORTANT:*** A given response should focus on only one probability value of the CPD table.\n"
+        #     "Step 5: Once all the CPDs are confirmed, announce 'Done with all the probability values'.\n"
+        #     "Step 6: Return the confirmed CPDs in dictionary format for backend parsing in a single message, focusing on one variable at a time. Use the following format:"
+        #     "  ```\n"
+        #     "{\n"
+        #     "      'variable': 'Confirmed Variable',\n"
+        #     "      'variable_cardinality': Number of States,\n"
+        #     "      'probabilities': {'State 1': Confirmed Probability, 'State 2': Confirmed Probability},\n"
+        #     "      'evidence': ['Parent Node 1'],\n"
+        #     "      'evidence_cardinality': [Cardinality],\n"
+        #     "      'state_names': {'Variable Name': ['State 1', 'State 2']}\n"
+        #     "  }\n"
+        #     "  ```\n"
+        #     "***IMPORTANT***: Start and end the dictionary with triple ticks (```)"
+        #     "REMEMBER: Account for all relationships while eliciting the CPDs. "
+        #     "The order of nodes should be as follows:"
+        #     "1: Trigger Nodes"
+        #     "2: Risk Node"
+        #     "3: Mitigator Node"
+        #     "4: Outcome Node"
+        #     "Access the nodes and categories from the chat history."
+        # )
+
         probability_template = (
-            "### Step-by-Step Iterative Process for CPD Confirmation:\n\n"
-            "Step 1: Introduction\n"
-            "- Begin by explaining to the user that you will assist in completing a Conditional Probability Distribution (CPD) table, using easy-to-understand language.\n"
-            "- Clarify that the process is designed for those without a background in probability.\n\n"
-            "Step 2: Initial CPD Presentation in Natural Language\n"
-            "- Present the first CPD derived from data in simple, natural language.\n"
-            "- Example presentation: 'For the first variable, let's consider how likely different outcomes are. For example, there's a chance that outcome A could happen, and outcome B might happen this often...'\n"
-            "- Encourage the user to provide their thoughts and feedback on these initial probability estimations.\n\n"
-            "Step 3: User Feedback and Adjustment\n"
-            "- Discuss the presented probabilities for the variable with the user, using everyday terms.\n"
-            "- Adjust the probabilities based on user feedback, still using natural language for clarity.\n\n"
-            "Step 4: Confirm and Finalize CPD for One Variable\n"
-            "- Once the user confirms the probabilities for the first variable, prepare the final CPD in the specified dictionary format for backend parsing.\n"
-            "- This step will not be presented to the user but is rather for backend processing.\n"
-            "- Example final CPD format:\n"
+            "You are a part of an AI chatbot that is trying to help a user assess the risk of a trade using a Bayesian network. Your specific job is to help the user complete a Conditional Probability Distribution (CPD) table. You will be suggesting probabilities for each entry based on available data or user input, adjusting as needed. The user has no understanding of Bayesian networks and probabilites and your language is to reflect that. Use simple terms while communicating with the user.\n"
+            "Step 1: Present the CPDs as html with class 'styled-table', one by one. Each message should focus on one CPD table.\n"
+            "Present the independent CPDs first, followed by the dependent CPDs.\n"
+            "Explain these probabilities to a user in natural language using non-technical jargon. For example, there's a chance that outcome A could happen, and outcome B might happen this often...\n"
+            "Step 2: Incorporate the user's feedback and adjust the probabilities accordingly.\n"
+            "Step 3: Follow this method for all variables for which the CPDs are passed from the backend, one by one.\n"
+            "Step 4: For the variables for which CPDs are missing, elicit the CPDs from the user. Present and confirm one variable at a time in a user-friendly manner. Remember to keep in mind all parents and their combinations.\n"
+            "***IMPORTANT:*** A given response should focus on only one probability value of the CPD table.\n"
+            "Step 5: Once all the CPDs are confirmed, announce 'Done with all the probability values'.\n"
+            "Step 6: Return the confirmed CPDs in dictionary format for backend parsing in a single message, focusing on one variable at a time. Use the following format:"
             "  ```\n"
-            "  final_cpd_dict = {\n"
+            "{\n"
             "      'variable': 'Confirmed Variable',\n"
             "      'variable_cardinality': Number of States,\n"
             "      'probabilities': {'State 1': Confirmed Probability, 'State 2': Confirmed Probability},\n"
@@ -162,16 +285,9 @@ class RiskBot:
             "      'evidence_cardinality': [Cardinality],\n"
             "      'state_names': {'Variable Name': ['State 1', 'State 2']}\n"
             "  }\n"
-            "  ```\n\n"
-            "Step 5: Iterative Process for Subsequent Variables\n"
-            "- Repeat Steps 2 to 4 for each subsequent variable. Present and confirm one variable at a time in a user-friendly manner.\n"
-            "- Ensure each variable is fully confirmed and finalized before moving to the next.\n\n"
-            "Step 6: Completion of All Variables\n"
-            "- After all variables have been discussed, adjusted, and confirmed, announce 'Done with all the probability values'.\n\n"
-            "### Gradual Elicitation and Confirmation:\n"
-            "- Throughout the process, explain probabilities and outcomes in everyday language, avoiding technical terms.\n"
-            "- Focus on understanding the user's perspective and clarify any doubts in a friendly manner.\n\n"
-            "REMEMBER: Present initial CPDs in natural language for user understanding. Return confirmed CPDs in dictionary format for backend parsing, focusing on one variable at a time."
+            "  ```\n"
+            "***IMPORTANT***: Start and end the dictionary with triple ticks (```)"
+            "REMEMBER: Account for all relationships while eliciting the CPDs. "
         )
 
         self.memory = memory
@@ -196,7 +312,7 @@ class RiskBot:
         )
         return chat_prompt
 
-    def get_current_handler_and_pattern(self):
+    def get_handler(self):
         if st.session_state.category == self.NODES:
             return self.nodes_handler
         elif st.session_state.category == self.EDGES:
@@ -205,9 +321,9 @@ class RiskBot:
             return self.probability_handler
 
     def manage_risk(self, input_text):
-        handler = self.get_current_handler_and_pattern()
+        handler = self.get_handler()
         response = handler.get_response(input_text)
-        match = re.search(st.session_state['pattern'], response)
+        match = re.search(st.session_state.pattern, response)
         if match:
             if st.session_state.category == self.NODES:
                 st.session_state.category = self.EDGES
@@ -215,40 +331,19 @@ class RiskBot:
                 start_index = match.group(1).find('{')
                 end_index = match.group(1).find('}')
                 st.session_state.nodes = match.group(1)[start_index:end_index+1]
+                response = None
             elif st.session_state.category == self.EDGES:
                 st.session_state.category = self.PROBABILITY
                 st.session_state.pattern = self.probability_pattern
                 start_index = match.group(1).find('[')
                 end_index = match.group(1).find(']')
                 st.session_state.edges = match.group(1)[start_index:end_index+1]
+                response = None
             else:
                 st.session_state['probability'] = match.group(1)
+                response = None
         st.cache(allow_output_mutation=True)
         return response
-
-
-# Initialize the session_state variables
-if 'nodes' not in st.session_state:
-    st.session_state['nodes'] = None
-if 'edges' not in st.session_state:
-    st.session_state['edges'] = None
-if 'probability' not in st.session_state:
-    st.session_state['probability'] = None
-if 'responses' not in st.session_state:
-    st.session_state['responses'] = ["Hi, Please tell me your scenario"]
-if 'requests' not in st.session_state:
-    st.session_state['requests'] = []
-if 'buffer_memory' not in st.session_state:
-    st.session_state['buffer_memory'] = ConversationBufferWindowMemory(k=50, return_messages=True)
-if 'category' not in st.session_state:
-    st.session_state['category'] = 'nodes'
-if 'pattern' not in st.session_state:
-    st.session_state['pattern'] = r"(?i)final nodes\s*:\s*(.*(?:\n|.)*)"
-if 'tentative_edges' not in st.session_state:
-    st.session_state['tentative_edges'] = None
-if 'tentative_cpds' not in st.session_state:
-    st.session_state['tentative_cpds'] = None
-    
 
 risk_bot = RiskBot(openai_api_key, st.session_state.buffer_memory)
 
@@ -257,21 +352,22 @@ response_container = st.container()
 text_container = st.container()
 
 with text_container:
-
     query = st.chat_input("Query", key="input")
     if query:   
         with st.spinner("Thinking..."):
-            response = risk_bot.manage_risk(query)
+            response = risk_bot.manage_risk('User: ' + query)
             st.session_state['requests'].append(query)
-            if not re.search(risk_bot.nodes_pattern, response) and not re.search(risk_bot.edges_pattern, response) and not re.search(risk_bot.probability_pattern, response):
+            if response:
                 st.session_state['responses'].append(response)
 
     # Update session_state according to risk_bot's internal state
     if st.session_state['nodes']:
         extract_and_format_nodes(st.session_state['nodes'])
-        query = 'Give me the edges based on these nodes'
-        response = risk_bot.edges_handler.get_response(query)
-        st.session_state['responses'].append(response)
+        if not st.session_state['sidebar_node']:
+            st.session_state['sidebar_node'] = True
+            query = 'Backend: Give me the edges based on these nodes'
+            response = risk_bot.edges_handler.get_response(query)
+            st.session_state['responses'].append(response)
         # if not st.session_state['tentative_edges']:
         #     st.session_state['tentative_edges'] = get_edges(st.session_state['nodes'])
         #     query = 'Following are edges collected from dynamically collected data. Incorporate them in your response.{}.\nThis query does not come from the user.'.format(st.session_state['tentative_edges'])
@@ -279,9 +375,10 @@ with text_container:
         #     st.session_state['responses'].append(response)
     if st.session_state['edges']:
         extract_and_format_edges(st.session_state['edges'])
-        if not st.session_state['tentative_cpds']:
+        if not st.session_state['sidebar_edge']:
+            st.session_state['sidebar_edge'] = True
             st.session_state['tentative_cpds'] = get_cpds(st.session_state['edges'])
-            query = 'Following are CPDs collected from dynamically collected data. Incorporate them in your response.{}\nThis query does not come from the user.'.format(st.session_state['tentative_cpds'])
+            query = 'Backend: Following are CPDs collected from dynamically collected data. These come from the backend and, not from the user. Incorporate them in your response.{}\n'.format(st.session_state['tentative_cpds'])
             response = risk_bot.probability_handler.get_response(query)
             st.session_state['responses'].append(response)
     if st.session_state['probability']:pass
@@ -292,7 +389,6 @@ with response_container:
     if st.session_state['responses']:
         for i in range(len(st.session_state['responses'])):
             segments = process_response(st.session_state['responses'][i])
-            #displayed_graph = False
             for segment in segments:    
                 with st.chat_message("assistant"):
                     if isinstance(segment, str):
@@ -303,14 +399,14 @@ with response_container:
                     else:
                         HtmlFile = open(f'graph.html', 'r', encoding='utf-8')
                         components.html(HtmlFile.read(), height=435)
-                    # else:
-                    #     if not displayed_graph:
-                    #         st.graphviz_chart(segment)
-                    #         displayed_graph = True
             if i < len(st.session_state['requests']):
                 with st.chat_message("user"):
                     st.write(st.session_state['requests'][i])
-                #message(st.session_state['requests'][i], is_user=True, key=str(i) + '_user')
+
+        while i < len(st.session_state['requests']):
+            with st.chat_message("user"):
+                st.write(st.session_state['requests'][i])
+            i += 1
 
 
 
