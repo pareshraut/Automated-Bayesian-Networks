@@ -9,6 +9,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
+from streamlit_chat import message
 from langchain.memory import ConversationBufferWindowMemory
 import streamlit.components.v1 as components
 
@@ -21,9 +22,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-with open("risk_bot/styles.css") as f:                                                
-    st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
 
 with st.sidebar:
     openai_api_key = st.text_input("OpenAI API Key", type="password")
@@ -324,8 +322,7 @@ class RiskBot:
             "Step 3: Follow this method for all variables for which the CPDs are passed from the backend, one by one.\n"
             "Step 4: For the variables for which CPDs are missing, elicit the CPDs from the user. Present and confirm one probability from one variable at a time in a user-friendly manner. Remember to keep in mind all parents and their combinations.\n"
             "***IMPORTANT:*** A given response should focus on only one probability value of the CPD table.\n"
-            "Step 5: Once the values for a given variable are elicited, present it to the user in the form of html table as above and confirm.\n"
-            "Step 6: Once all the CPDs are confirmed, announce 'Done with all the probability values'.\n"
+            "Step 5: Once all the CPDs are confirmed, announce 'Done with all the probability values'.\n"
             "REMEMBER: Account for all relationships while eliciting the CPDs. "
         )
 

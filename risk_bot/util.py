@@ -19,7 +19,8 @@ from pgmpy.models import BayesianNetwork
 from pgmpy.factors.discrete import TabularCPD
 from joblib import Parallel, delayed
 from pyvis import network as net
-
+from sklearn.cluster import KMeans
+import numpy as np
 
 # Set the FRED API key
 os.environ["FRED_API_KEY"] = "b73c11e70992c0501f8748360e192763"
@@ -254,21 +255,30 @@ def get_data_from_nodes(nodes):
     
     # Step 3: Drop rows with any NaN values.
     #df = df.dropna(axis=0)
-    
-    # Step 4: Continue with your current logic.
-    label_map = {2: ['Low', 'High'],
-                 3: ['Low', 'Medium', 'High']}
 
     for column in df.columns:
         num_unique = df[column].nunique()
         try:
-            if num_unique < 3:
-                df = df.drop(columns=[column])
+            if num_unique >= 3:
+                # Use K-Means clustering for three clusters
+                kmeans = KMeans(n_clusters=3, random_state=0).fit(df[[column]])
+                centroids = kmeans.cluster_centers_.flatten()
+                labels = kmeans.labels_
+                # Map labels based on centroids
+                label_mapping = {np.argmin(centroids): 'Low', np.argmax(centroids): 'High'}
+                middle_label = set(range(3)) - set(label_mapping.keys())
+                label_mapping[middle_label.pop()] = 'Medium'
+                df[column] = [label_mapping[l] for l in labels]
+            elif num_unique == 2:
+                # Use K-Means clustering for two clusters
+                kmeans = KMeans(n_clusters=2, random_state=0).fit(df[[column]])
+                centroids = kmeans.cluster_centers_.flatten()
+                labels = kmeans.labels_
+                # Map labels based on centroids
+                label_mapping = {np.argmin(centroids): 'Low', np.argmax(centroids): 'High'}
+                df[column] = [label_mapping[l] for l in labels]
             else:
-                # We use min(3, num_unique-1) to ensure that we don't go beyond the number of labels we have defined
-                bins = min(3, num_unique - 1)
-                labels = label_map[bins]
-                df[column] = pd.qcut(df[column], q=bins, labels=labels, duplicates='drop')
+                df = df.drop(columns=[column])
         except ValueError:
             print('ValueError: ', column, num_unique)
             df = df.drop(columns=[column])
@@ -356,72 +366,7 @@ def process_response(response):
         edge_start_index = response.find('[')
         edge_end_index = response.find(']')
 
-        if response.count('{') > 1 and response.count('}') > 1:
-            print(response)
-            segments = []
-            last_end = 0
-            #matches = capture_multiple_dictionaries(response)
-            pattern = re.compile(r'```(.*?)```', re.MULTILINE | re.DOTALL)
-            matches = pattern.findall(response)
-            for match in matches:
-                cpd_start, cpd_end = response.index(match), response.index(match) + len(match)
-                #import pdb; pdb.set_trace()
-                cpd_dict = ast.literal_eval(match)
-
-                # Append text before CPD string
-                if cpd_start > last_end:
-                    segments.append(response[last_end:cpd_start])
-                last_end = cpd_end
-
-                # # Convert CPD dictionary to HTML table
-                # table = "<table class='styled-table'>\n<thead>\n<tr>"
-                # for key in cpd_dict.keys():
-                #     table += f"<th>{escape(key)}</th>" 
-                # table += "</tr>\n</thead>\n<tbody>\n<tr>"
-                # for value in cpd_dict.values():
-                #     if isinstance(value, dict):
-                #         value = ', '.join(f'{k} ({v})' for k, v in value.items()) 
-                #     elif isinstance(value, list):
-                #         value = ', '.join(str(v) for v in value)
-                #     else:
-                #         value = str(value)
-                #     table += f"<td>{escape(value)}</td>"
-                # table += "</tr>\n</tbody>\n</table>\n"
-
-                # Determine the structure of the CPD dictionary
-                table = "<table class='styled-table'>\n<thead>\n<tr>"
-                if all(isinstance(key, str) and isinstance(value, float) for key, value in cpd_dict.items()):
-                    # Case 1: Single-level dictionary with string keys and float values
-                    headers = list(cpd_dict.keys())
-                    table += ''.join(f"<th>{escape(header)}</th>" for header in headers)
-                    table += "</tr>\n</thead>\n<tbody>\n<tr>"
-                    values = list(cpd_dict.values())
-                    table += ''.join(f"<td>{escape(str(value))}</td>" for value in values)
-                elif all(isinstance(key, str) and isinstance(value, dict) for key, value in cpd_dict.items()):
-                    # Case 2: Multi-level dictionary with string keys and inner dictionaries
-                    headers = list(cpd_dict.keys())
-                    inner_keys = list(cpd_dict[headers[0]].keys())
-                    table += ''.join(f"<th>{escape(header)}</th>" for header in headers)
-                    table += "</tr>\n</thead>\n<tbody>\n"
-                    for inner_key in inner_keys:
-                        table += f"<tr>"
-                        for header in headers:
-                            table += f"<td>{escape(str(cpd_dict[header].get(inner_key, '')))}</td>"
-                        table += "</tr>\n"
-                else:
-                    # Handle other cases as needed
-                    table += "<th>Header</th><td>Data</td>"  # Modify this for other cases
-
-                table += "</tbody>\n</table>\n"
-                
-                # Append CPD table  
-                segments.append(table)
-
-            # Append remaining text
-            segments.append(response[last_end:])
-            return segments
-
-        elif node_start_index != -1 and node_end_index != -1:
+        if node_start_index != -1 and node_end_index != -1:
             segments = []
             last_end = 0
             nodes_str = response[node_start_index:node_end_index+1]
