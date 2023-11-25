@@ -445,6 +445,7 @@ def process_response(response):
         print(e)
         print(response)
 
+@st.cache_data
 def create_graph(nodes, edges):
     """Create a graph from the nodes and edges."""
     g = net.Network(height="400px", width="100%", directed=True)

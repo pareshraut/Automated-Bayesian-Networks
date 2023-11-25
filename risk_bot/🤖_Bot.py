@@ -1,7 +1,7 @@
 import streamlit as st
 import re
 from setup import Nodes, Edges, ProbabilityDistribution
-from util import extract_and_format_nodes, extract_and_format_edges, get_edges, get_cpds, process_response
+from util import extract_and_format_nodes, extract_and_format_edges, get_cpds, process_response
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -22,7 +22,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-with open("styles.css") as f:                                                
+with open("risk_bot/styles.css") as f:                                                
     st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
 
 with st.sidebar:
