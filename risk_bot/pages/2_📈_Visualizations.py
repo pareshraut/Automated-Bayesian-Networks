@@ -6,10 +6,12 @@ from langchain.chat_models import ChatOpenAI
 from langchain import PromptTemplate, LLMChain
 import streamlit.components.v1 as components
 
-with open("risk_bot/styles.css") as f:                                                
+with open("styles.css") as f:                                                
     st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
 
 openai_api_key = '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'
+
+
 
 def check_regex_pattern(text):
     pattern = r'(?i)Done with all the probability values.'
@@ -80,14 +82,17 @@ if st.session_state['nodes'] is not None:
             </td>
         </tr>
         """
-        st.write(table, unsafe_allow_html=True)
+    st.write("""<h1>Nodes</h1>""", unsafe_allow_html=True)
+    st.write(table, unsafe_allow_html=True)
 
 if st.session_state['edges'] is not None:
     HtmlFile = open(f'graph.html', 'r', encoding='utf-8')
+    st.write("""<h1>Edges</h1>""", unsafe_allow_html=True)
     components.html(HtmlFile.read(), height=435)
 
-if check_regex_pattern(st.session_state['buffer_memory']) is not None:
-    matches = process_text_with_llm(st.session_state['buffer_memory'])
+if check_regex_pattern(st.session_state['buffer_memory'].buffer_as_str) is not None:
+    matches = process_text_with_llm(st.session_state['buffer_memory'].buffer_as_str)
+    st.write("""<h1>Probabilities</h1>""", unsafe_allow_html=True)
     for match in matches:
         exec(match)
 

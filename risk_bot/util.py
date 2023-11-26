@@ -4,6 +4,7 @@ from html import escape
 import ast
 from langchain.prompts import FewShotChatMessagePromptTemplate, ChatPromptTemplate
 from langchain.chat_models import ChatOpenAI
+from langchain import PromptTemplate, LLMChain
 import datetime
 import os
 import pandas as pd
@@ -504,5 +505,40 @@ def create_graph(nodes, edges):
 #     return graph  # return the graph object instead of rendering it here
 
 
+
+def process_prob():
+    llm = ChatOpenAI(temperature=0, openai_api_key= st.session_state.openai_api_key, model='gpt-4-1106-preview')
+    visualisation_template = """
+    You are a Bayesian Network expert. Here is the text: {text}. Go through this and follow the steps:
+
+    Step 1: Use the following edges to define the Bayesian Network structure:
+    edges = {edges}
+
+    Step 2: Create tabular CPDs for each node. Follow the format:
+    cpd_node = TabularCPD(variable='node_name', variable_card=number_of_states, 
+                        values=[[probabilities]],
+                        evidence=['parent_node1', 'parent_node2'], evidence_card=[number_of_states_for_parent1, number_of_states_for_parent2])
+    ***IMPORTANT***: Make sure each CPD’s evidence includes all the node's parents in the edges list. Verify that the shape of the CPDs is consistent with the cardinalities of the variables and evidence variables. For example, if a node has two parents, each with two states, the shape of the CPD should align with this structure.
+
+    Step 3: Construct the Bayesian Network DAG with the defined edges and then add the CPDs to it. Use:
+    DAG = BayesianNetwork(edges)
+    DAG.add_cpds(cpd_1, cpd_2, ...)
+
+    Step 4: For each category of the mitigator node, infer the probability of the trade outcome node and print it. Annotate the results with the mitigator category name. Set Evidence of the risk node as mentioned by the user.
+
+    Step 5: Return only the Python script for the Bayesian network construction and inference. Make sure the script is clear, concise, and includes comments for better understanding.
+
+
+    Remember: This script assumes the use of the `pgmpy` library. Adjustments might be needed based on your specific library and data.
+    """
+
+    prompt_template = PromptTemplate(input_variables=["text", "edges"], template=visualisation_template)
+    chain = LLMChain(llm=llm,
+                    prompt=prompt_template)
+    output = chain.invoke({'text': st.session_state.buffer_memory.buffer_as_str, 'edges': st.session_state.edges})
+    pattern = re.compile(r"```python(.*?)```", re.DOTALL)
+    matches = pattern.findall(output['text'])
+    result = exec(matches[0])
+    return result
 
 
