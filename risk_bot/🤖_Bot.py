@@ -41,8 +41,8 @@ header = st.container()
 header.write(
     """
     <div class='fixed-header'>
-        <h1 style="margin: 0;">Bayesian - Risk Manager</h1>
-        <p style="margin: 5;">Helping you manage the risk in your scenario</p>
+        <h1 style="margin: 0;">Trade Decision Bot</h1>
+        <p style="margin: 5;">Your Intelligent Trading Companion. Navigating Markets with Bayesian Precision.</p>
     </div>
     """,
     unsafe_allow_html=True
@@ -160,7 +160,7 @@ class RiskBot:
             "Step 6: Once all the CPDs are confirmed, announce 'Done with all the probability values'.\n"
             "Step 7: Ask the user which of category of the risk node is most likely to occur. For instance if risk node is 'Market Risk' and the categories are 'High', 'Medium' and 'Low', ask the user which of these is most likely to occur. \n"
             "Step 8 : Once done with all above steps, announce 'Wait as we compute the final decision'.\n"
-            "REMEMBER: Account for all relationships while eliciting the CPDs. "
+            "REMEMBER: Account for all relationships while eliciting the CPDs."
         )
 
         decision_template = (

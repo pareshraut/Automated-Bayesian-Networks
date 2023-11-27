@@ -5,17 +5,17 @@ with open("styles.css") as f:
     st.markdown(f'<style>{f.read()}</style>',unsafe_allow_html= True) 
 
 # About Us Page Content
-st.title("AI Chatbot for Investment Decisions")
+st.title("AI Chatbot for Trading Decisions")
 
 # Introduction
 st.header("About Bespoke Trade AI Chatbot")
-st.markdown("Welcome to Bespoke Trade AI Chatbot, your intelligent companion for making informed investment decisions. "
-            "Our chatbot leverages advanced AI technology to provide tailored strategies based on your unique investment scenarios.")
+st.markdown("Welcome to Bespoke Trade AI Chatbot, your intelligent companion for making informed trading decisions. "
+            "Our chatbot leverages advanced AI technology to provide tailored strategies based on your unique trading scenarios.")
 
 # Understanding Bayesian Networks
 st.header("Understanding Bayesian Networks")
 st.markdown("A Bayesian Network is a probabilistic graphical model that represents a set of variables and their "
-            "conditional dependencies via a directed acyclic graph. In the context of investment, these networks "
+            "conditional dependencies via a directed acyclic graph. In the context of trading, these networks "
             "can analyze potential outcomes and offer predictive insights, making them invaluable for decision-making.")
 
 # Link to Bayesian Network Resources
@@ -23,16 +23,16 @@ st.markdown("[Learn More About Bayesian Networks](https://en.wikipedia.org/wiki/
 
 # Our Methodology
 st.header("Our Methodology")
-st.markdown("Our chatbot follows a structured methodology to assist you in your investment decisions.")
+st.markdown("Our chatbot follows a structured methodology to assist you in your trading decisions.")
 
 # Investment Scenario Analysis
-st.subheader("1. Investment Scenario Analysis")
-st.markdown("Start by presenting your investment scenario. Our chatbot utilizes GPT-4 to generate an initial set of "
+st.subheader("1. Trading Scenario Analysis")
+st.markdown("Start by presenting your trading scenario. Our chatbot utilizes GPT-4 to generate an initial set of "
             "decision nodes, tailored to your specific needs.")
 
 # Interactive Node Customization
 st.subheader("2. Interactive Node Customization")
-st.markdown("You have the control to add, remove, or modify these nodes, ensuring a highly personalized investment strategy.")
+st.markdown("You have the control to add, remove, or modify these nodes, ensuring a highly personalized trading strategy.")
 
 # Intelligent Edge Recommendations
 st.subheader("3. Intelligent Edge Recommendations")
@@ -47,20 +47,20 @@ st.markdown("[FRED API](https://fred.stlouisfed.org/) | [YFinance API](https://p
 # CPD Generation with Maximum Likelihood Estimator
 st.subheader("5. CPD Generation with Maximum Likelihood Estimator")
 st.markdown("Employing the Maximum Likelihood Estimator, we generate accurate Conditional Probability Distributions for comprehensive analysis.")
-st.markdown("[Maximum Likelihood Estimation - Overview](insert link)")
+st.markdown("[Maximum Likelihood Estimation - Overview](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation)")
 
 # User-Centric CPD Contribution
 st.subheader("6. User-Centric CPD Contribution")
-st.markdown("Your insights matter. Contribute to the remaining CPDs, adding a personal touch to the investment analysis.")
+st.markdown("Your insights matter. Contribute to the remaining CPDs, adding a personal touch to the trading analysis.")
 
 # Finalizing Your Investment Decision
-st.subheader("7. Finalizing Your Investment Decision")
-st.markdown("All these elements come together in a Bayesian Network, guiding you to make informed investment decisions.")
+st.subheader("7. Finalizing Your Trading Decision")
+st.markdown("All these elements come together in a Bayesian Network, guiding you to make informed trading decisions.")
 
 # Why Choose Bespoke Trade AI Chatbot?
 st.header("Why Choose Bespoke Trade AI Chatbot?")
 st.markdown("Experience a unique blend of AI intelligence and personal customization. Read our success stories and "
-            "get in touch to start your bespoke investment journey today.")
+            "get in touch to start your bespoke trading journey today.")
 
 # Success Stories
 st.markdown("[Read Our Success Stories](insert link)")
@@ -74,4 +74,4 @@ st.button("Explore our chatbot and start your bespoke investment journey today!"
 
 # Legal Information
 st.sidebar.header("Legal Information")
-st.sidebar.markdown("[Terms of Use](insert link) | [Privacy Policy](insert link)")
+st.sidebar.markdown("[Terms of Use] | [Privacy Policy]")

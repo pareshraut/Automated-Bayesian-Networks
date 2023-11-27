@@ -52,13 +52,10 @@ def extract_and_format_nodes(response):
     data = eval(json_data)
 
     formatted_data = {
-        'Event Node': data.get('Event Node', []),
-        'Opportunity Node': data.get('Opportunity Node', []),
-        'Trigger Nodes': data.get('Trigger Nodes', []),
-        'Mitigator Nodes': data.get('Mitigator Nodes', []),
-        'Control Nodes': data.get('Control Nodes', []),
-        'External Influence Nodes': data.get('External Influence Nodes', []),
-        'Outcome Nodes': data.get('Outcome Nodes', [])
+        'Risk Node': data.get('Risk Node', []),
+        'Trigger Nodes': data.get('Trigger Node', []),
+        'Mitigator Nodes': data.get('Mitigator Node', []),
+        'Outcome Nodes': data.get('Outcome Node', [])
     }
 
     with st.sidebar.expander("Current Nodes"):
