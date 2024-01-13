@@ -1,8 +1,8 @@
-## AI Trading Chatbot
+# AI Trading Chatbot
 
 This project implements an AI chatbot to provide personalized trading recommendations using Bayesian networks. The chatbot leads users through the process of constructing a Bayesian network tailored to their specific trading scenario, and utilizes the network to offer data-driven insights.
 
-# Overview
+## Overview
 Implements conversational AI using GPT-4 via LangChain and Streamlit
 Allows users to describe their unique trading scenario
 Dynamically generates relevant nodes and edges for a Bayesian network
@@ -19,7 +19,7 @@ Trading Recommendations: The chatbot analyzes the Bayesian network to recommend 
 Natural Conversation: The entire interaction from node creation to final recommendations happens through natural dialogue powered by GPT-4.
 
 
-# Installation Requirements:
+## Installation Requirements:
 
 Python 3.7+
 Streamlit
@@ -34,14 +34,14 @@ Copy code
 
 pip install streamlit langchain pgmpy pandas yfinance fredapi
 
-# Usage
+## Usage
 Copy code
 
 streamlit run 🤖_Bot.py
 
 The app will be served at http://localhost:8501. Follow the conversational prompts to construct your Bayesian network and receive trading recommendations tailored to your scenario.
 
-# Demo
+## Demo
 A video demo of the app can be found here: [link to demo]
 
 References
