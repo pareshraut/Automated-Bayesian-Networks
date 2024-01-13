@@ -38,7 +38,7 @@ pip install streamlit langchain pgmpy pandas yfinance fredapi
 ## Usage
 Copy code
 
-streamlit run 🤖_Bot.py
+streamlit run risk_bot/🤖_Bot.py
 
 The app will be served at http://localhost:8501. Follow the conversational prompts to construct your Bayesian network and receive trading recommendations tailored to your scenario.
 
