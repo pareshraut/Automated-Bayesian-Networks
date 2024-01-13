@@ -43,7 +43,7 @@ streamlit run risk_bot/🤖_Bot.py
 The app will be served at http://localhost:8501. Follow the conversational prompts to construct your Bayesian network and receive trading recommendations tailored to your scenario.
 
 ## Demo
-A video demo of the app can be found here: [link to demo]
+A video demo of the app can be found here: [(https://github.com/pareshraut/Automated-Bayesian-Networks/issues/2#issue-2079936495)https://github.com/pareshraut/Automated-Bayesian-Networks/issues/2#issue-2079936495]
 
 References
 The core methodology was adapted from:
