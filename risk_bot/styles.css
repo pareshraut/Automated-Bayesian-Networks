@@ -1,0 +1,206 @@
+/* body {
+    font-family: "Lato", sans-serif;
+  }
+  
+  section[data-testid='stSidebar'] {
+    height: 100%;
+    width: 200px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #3d7fc6;
+    padding-top: 60px;
+  }
+  
+  section[data-testid='stSidebar'] a {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #111;
+    display: block;
+  }
+  
+  section[data-testid='stSidebar'] a:hover {
+    color: #f1f1f1;
+  }
+  
+  main section[data-testid='stSidebar']{
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+  }
+  
+  .material-icons,
+  .icon-text {
+    vertical-align: middle;
+  }
+  
+  .material-icons {
+  
+    margin-right: 30px
+  }
+  
+  #main {
+    transition: margin-left 0.5s;
+    padding: 16px;
+    margin-left: 250px;
+  }
+  
+  @media screen and (max-height: 450px) {
+    section[data-testid='stSidebar'] {
+      padding-top: 15px;
+    }
+    section[data-testid='stSidebar'] a {
+      font-size: 18px;
+    }
+  }
+   */
+
+button[data-testid='baseButton-headerNoPadding'] {
+    background-color: #42a45e; /* Dark green background */
+    border-radius: 8px; /* Rounded corners for the expander */
+    margin: 5px 0; /* Margin around the expander */
+    padding: 10px; /* Padding inside the expander */
+    height: 4%;
+    top: 5;
+    right: 0;
+    color: #000000;
+}
+
+label[data-testid='stWidgetLabel'] {
+    font-weight: bold;    /* Makes the text bold */
+    font-size: 20px;      
+}
+
+div[data-testid='stExpander'] {
+    background-color: #FFFFFF; /* Dark green background */
+    border-radius: 8px; /* Rounded corners for the expander */
+    margin: 5px 0; /* Margin around the expander */
+    padding: 10px; /* Padding inside the expander */
+    height: 4%;
+    bottom: 60px;
+    right: 0;
+    color: #000000;
+}
+
+/* Adjust the sidebar background and border */
+section[data-testid='stSidebar'] {
+    background-color: #42a45e; /* Dark green background */
+    border: none; /* Remove any borders */
+}
+
+/* Adjust the sidebar title */
+section[data-testid='stSidebar'] h1 {
+    color: #FFFFFF; /* White color text */
+    font-size: 25px; /* Larger font size */
+}
+
+href {
+    color: #000; /* White color text */
+    font-size: 25px; /* Larger font size */
+}
+
+/* Style for the sidebar text */
+section[data-testid='stSidebar'] .st-bx {
+    color: #000000; /* Light grey text */
+}
+
+/* Style the sidebar expander header */
+section[data-testid='stSidebar'] .st-expander > label {
+    color: #FFFFFF; /* White color text */
+}
+
+/* Style the sidebar expander content */
+section[data-testid='stSidebar'] .st-expander .st-cf {
+    background-color: #333C83; /* Dark blue background */
+    color: #ADBAC7; /* Light grey text */
+}
+
+/* Style the buttons and inputs */
+section[data-testid='stSidebar'] .st-bx {
+    background-color: #FFFFFF; /* Lighter blue background for inputs and buttons */
+    border-radius: 5px; /* Rounded borders */
+    color: #000000; /* White color text */
+}
+
+/* input text box to the bottom of the sidebar */
+div[data-testid='stTextInput'] {
+    position: fixed;
+    width: 20%;
+    bottom: 30px;
+    padding: 10;
+    /* z-index: 999; */
+}
+
+/* Style the radio buttons */
+.stRadio > label {
+    color: #FFFFFF; /* White color text */
+}
+div[data-testid="stVerticalBlock"] div:has(div.fixed-header) {
+    color: #000000;
+    position: sticky;
+    /*top: 2.875rem;*/
+    background-color: #FFFFFF;
+    z-index: 999;
+}
+.fixed-header {
+    border-bottom: 1px solid black;
+    text-align: center; /* Center the text */
+    padding: 10px; /* Add padding for better visibility */
+}
+
+.styled-table {
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 900px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    border-radius: 10px; /* Rounded edges */
+    overflow: hidden; /* Ensures the rounded edges contain the table rows */
+}
+.styled-table thead tr {
+    background-color: #009879;
+    color: #ffffff;
+    text-align: left;
+}
+.styled-table th, 
+.styled-table td {
+    padding: 12px 15px;
+}
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+.styled-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+.styled-table tbody tr:last-of-type {
+    border-bottom: 2px solid #009879;
+}
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 500px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 2;
+    top:-10px;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
